@@ -1,0 +1,366 @@
+===========================================================================
+SMART AGRICULTURE PROJECT - DATASET INVENTORY
+===========================================================================
+
+FILE: data\Cost_of_Cultivation\cost-of-cultivation-cleaned.csv
+SIZE: 1706.73 KB
+FORMAT: CSV
+COLUMNS: ['id', 'year', 'state_name', 'state_code', 'crop_name', 'crop_code', 'crop_type', 'cul_cost_a1', 'cul_cost_a2', 'cul_cost_b1', 'cul_cost_b2', 'cul_cost_c1', 'cul_cost_c2', 'cul_cost_c2rev', 'cul_cost_a2fl', 'prod_cost_a1', 'prod_cost_a2', 'prod_cost_b1', 'prod_cost_b2', 'prod_cost_c1', 'prod_cost_c2', 'prod_cost_c2rev', 'prod_cost_c3', 'prod_cost_a2fl', 'main_product_value', 'by_product_value', 'mat_lab_input_seed', 'mat_lab_input_fertilizer', 'mat_lab_input_manure', 'mat_lab_input_hmn_lab', 'mat_lab_input_ani_lab', 'seed_rate_per_unit', 'fert_rate_per_unit', 'manure_rate_per_unit', 'hmn_lab_rate_per_unit', 'ani_lab_rate_per_unit', 'implicit_rate', 'num_holdings_sample', 'num_tehsils_sample', 'derived_yield', 'hmn_lab_hrs_family', 'hmn_lab_hrs_attached', 'hmn_lab_hrs_casual', 'opr_cost_hmn_lab_family', 'opr_cost_hmn_lab_attached', 'opr_cost_hmn_lab_casual', 'opr_cost_ani_lab_hired', 'opr_cost_ani_lab_owned', 'opr_cost_mch_lab_hired', 'opr_cost_mch_lab_owned', 'opr_cost_seed', 'opr_cost_fertilizer', 'opr_cost_manure', 'opr_cost_insecticides', 'opr_cost_irrigation_chrg', 'opr_cost_misc', 'opr_cost_interest_on_wrk_cap', 'opr_cost', 'fix_cost_owned_land_rental', 'fix_cost_leased_land_rent', 'fix_cost_land_rev_tax_cess', 'fix_cost_depr_impl_farm_build', 'fix_cost_interest_fix_cap', 'fix_cost', 'opr_cost_crop_insurance', 'opr_cost_contractor_pay', 'a2_cost_flag', 'b1_cost_flag', 'c3_cost_flag']
+SAMPLE ROWS: 5
+
+FILE: data\Cost_of_Cultivation\cost-of-cultivation.csv
+SIZE: 1634.61 KB
+FORMAT: CSV
+COLUMNS: ['id', 'year', 'state_name', 'state_code', 'crop_name', 'crop_code', 'crop_type', 'cul_cost_a1', 'cul_cost_a2', 'cul_cost_b1', 'cul_cost_b2', 'cul_cost_c1', 'cul_cost_c2', 'cul_cost_c2rev', 'cul_cost_a2fl', 'prod_cost_a1', 'prod_cost_a2', 'prod_cost_b1', 'prod_cost_b2', 'prod_cost_c1', 'prod_cost_c2', 'prod_cost_c2rev', 'prod_cost_c3', 'prod_cost_a2fl', 'main_product_value', 'by_product_value', 'mat_lab_input_seed', 'mat_lab_input_fertilizer', 'mat_lab_input_manure', 'mat_lab_input_hmn_lab', 'mat_lab_input_ani_lab', 'seed_rate_per_unit', 'fert_rate_per_unit', 'manure_rate_per_unit', 'hmn_lab_rate_per_unit', 'ani_lab_rate_per_unit', 'implicit_rate', 'num_holdings_sample', 'num_tehsils_sample', 'derived_yield', 'hmn_lab_hrs_family', 'hmn_lab_hrs_attached', 'hmn_lab_hrs_casual', 'opr_cost_hmn_lab_family', 'opr_cost_hmn_lab_attached', 'opr_cost_hmn_lab_casual', 'opr_cost_ani_lab_hired', 'opr_cost_ani_lab_owned', 'opr_cost_mch_lab_hired', 'opr_cost_mch_lab_owned', 'opr_cost_seed', 'opr_cost_fertilizer', 'opr_cost_manure', 'opr_cost_insecticides', 'opr_cost_irrigation_chrg', 'opr_cost_misc', 'opr_cost_interest_on_wrk_cap', 'opr_cost', 'fix_cost_owned_land_rental', 'fix_cost_leased_land_rent', 'fix_cost_land_rev_tax_cess', 'fix_cost_depr_impl_farm_build', 'fix_cost_interest_fix_cap', 'fix_cost', 'opr_cost_crop_insurance', 'opr_cost_contractor_pay']
+SAMPLE ROWS: 5
+
+FILE: data\Cost_of_Cultivation\Cost_of_Cultivation_codebook.xlsx
+SIZE: 35.21 KB
+FORMAT: EXCEL
+SHEETS: ['Codebook', 'Metadata Information']
+
+FILE: data\India Agriculture Crop Production.csv
+SIZE: 30265.49 KB
+FORMAT: CSV
+COLUMNS: ['State', 'District', 'Crop', 'Year', 'Season', 'Area', 'Area Units', 'Production', 'Production Units', 'Yield']
+SAMPLE ROWS: 5
+
+FILE: data\mandi_prices\mandi_daily_2001.parquet
+SIZE: 124.68 KB
+FORMAT: PARQUET
+ROWS: 11,603
+COLUMNS: 11
+SCHEMA: ['State', 'District', 'Market', 'Commodity', 'Variety', 'Grade', 'Arrival_Date', 'Min_Price', 'Max_Price', 'Modal_Price', 'Commodity_Code']
+
+FILE: data\mandi_prices\mandi_daily_2002.parquet
+SIZE: 2913.87 KB
+FORMAT: PARQUET
+ROWS: 299,930
+COLUMNS: 11
+SCHEMA: ['State', 'District', 'Market', 'Commodity', 'Variety', 'Grade', 'Arrival_Date', 'Min_Price', 'Max_Price', 'Modal_Price', 'Commodity_Code']
+
+FILE: data\mandi_prices\mandi_daily_2003.parquet
+SIZE: 8429.89 KB
+FORMAT: PARQUET
+ROWS: 835,030
+COLUMNS: 11
+SCHEMA: ['State', 'District', 'Market', 'Commodity', 'Variety', 'Grade', 'Arrival_Date', 'Min_Price', 'Max_Price', 'Modal_Price', 'Commodity_Code']
+
+FILE: data\mandi_prices\mandi_daily_2004.parquet
+SIZE: 8214.15 KB
+FORMAT: PARQUET
+ROWS: 802,338
+COLUMNS: 11
+SCHEMA: ['State', 'District', 'Market', 'Commodity', 'Variety', 'Grade', 'Arrival_Date', 'Min_Price', 'Max_Price', 'Modal_Price', 'Commodity_Code']
+
+FILE: data\mandi_prices\mandi_daily_2005.parquet
+SIZE: 11278.50 KB
+FORMAT: PARQUET
+ROWS: 1,073,626
+COLUMNS: 11
+SCHEMA: ['State', 'District', 'Market', 'Commodity', 'Variety', 'Grade', 'Arrival_Date', 'Min_Price', 'Max_Price', 'Modal_Price', 'Commodity_Code']
+
+FILE: data\mandi_prices\mandi_daily_2006.parquet
+SIZE: 21667.25 KB
+FORMAT: PARQUET
+ROWS: 1,993,050
+COLUMNS: 11
+SCHEMA: ['State', 'District', 'Market', 'Commodity', 'Variety', 'Grade', 'Arrival_Date', 'Min_Price', 'Max_Price', 'Modal_Price', 'Commodity_Code']
+
+FILE: data\mandi_prices\mandi_daily_2007.parquet
+SIZE: 25607.87 KB
+FORMAT: PARQUET
+ROWS: 2,378,705
+COLUMNS: 11
+SCHEMA: ['State', 'District', 'Market', 'Commodity', 'Variety', 'Grade', 'Arrival_Date', 'Min_Price', 'Max_Price', 'Modal_Price', 'Commodity_Code']
+
+FILE: data\mandi_prices\mandi_daily_2008.parquet
+SIZE: 27563.38 KB
+FORMAT: PARQUET
+ROWS: 2,575,390
+COLUMNS: 11
+SCHEMA: ['State', 'District', 'Market', 'Commodity', 'Variety', 'Grade', 'Arrival_Date', 'Min_Price', 'Max_Price', 'Modal_Price', 'Commodity_Code']
+
+FILE: data\mandi_prices\mandi_daily_2009.parquet
+SIZE: 26755.65 KB
+FORMAT: PARQUET
+ROWS: 2,483,395
+COLUMNS: 11
+SCHEMA: ['State', 'District', 'Market', 'Commodity', 'Variety', 'Grade', 'Arrival_Date', 'Min_Price', 'Max_Price', 'Modal_Price', 'Commodity_Code']
+
+FILE: data\mandi_prices\mandi_daily_2010.parquet
+SIZE: 28559.38 KB
+FORMAT: PARQUET
+ROWS: 2,708,429
+COLUMNS: 11
+SCHEMA: ['State', 'District', 'Market', 'Commodity', 'Variety', 'Grade', 'Arrival_Date', 'Min_Price', 'Max_Price', 'Modal_Price', 'Commodity_Code']
+
+FILE: data\mandi_prices\mandi_daily_2011.parquet
+SIZE: 30653.17 KB
+FORMAT: PARQUET
+ROWS: 2,899,187
+COLUMNS: 11
+SCHEMA: ['State', 'District', 'Market', 'Commodity', 'Variety', 'Grade', 'Arrival_Date', 'Min_Price', 'Max_Price', 'Modal_Price', 'Commodity_Code']
+
+FILE: data\mandi_prices\mandi_daily_2012.parquet
+SIZE: 33372.15 KB
+FORMAT: PARQUET
+ROWS: 3,147,369
+COLUMNS: 11
+SCHEMA: ['State', 'District', 'Market', 'Commodity', 'Variety', 'Grade', 'Arrival_Date', 'Min_Price', 'Max_Price', 'Modal_Price', 'Commodity_Code']
+
+FILE: data\mandi_prices\mandi_daily_2013.parquet
+SIZE: 34982.34 KB
+FORMAT: PARQUET
+ROWS: 3,274,566
+COLUMNS: 11
+SCHEMA: ['State', 'District', 'Market', 'Commodity', 'Variety', 'Grade', 'Arrival_Date', 'Min_Price', 'Max_Price', 'Modal_Price', 'Commodity_Code']
+
+FILE: data\mandi_prices\mandi_daily_2014.parquet
+SIZE: 35389.62 KB
+FORMAT: PARQUET
+ROWS: 3,271,879
+COLUMNS: 11
+SCHEMA: ['State', 'District', 'Market', 'Commodity', 'Variety', 'Grade', 'Arrival_Date', 'Min_Price', 'Max_Price', 'Modal_Price', 'Commodity_Code']
+
+FILE: data\mandi_prices\mandi_daily_2015.parquet
+SIZE: 39839.89 KB
+FORMAT: PARQUET
+ROWS: 3,673,823
+COLUMNS: 11
+SCHEMA: ['State', 'District', 'Market', 'Commodity', 'Variety', 'Grade', 'Arrival_Date', 'Min_Price', 'Max_Price', 'Modal_Price', 'Commodity_Code']
+
+FILE: data\mandi_prices\mandi_daily_2016.parquet
+SIZE: 39534.73 KB
+FORMAT: PARQUET
+ROWS: 3,634,455
+COLUMNS: 11
+SCHEMA: ['State', 'District', 'Market', 'Commodity', 'Variety', 'Grade', 'Arrival_Date', 'Min_Price', 'Max_Price', 'Modal_Price', 'Commodity_Code']
+
+FILE: data\mandi_prices\mandi_daily_2017.parquet
+SIZE: 44695.16 KB
+FORMAT: PARQUET
+ROWS: 4,089,861
+COLUMNS: 11
+SCHEMA: ['State', 'District', 'Market', 'Commodity', 'Variety', 'Grade', 'Arrival_Date', 'Min_Price', 'Max_Price', 'Modal_Price', 'Commodity_Code']
+
+FILE: data\mandi_prices\mandi_daily_2018.parquet
+SIZE: 46581.09 KB
+FORMAT: PARQUET
+ROWS: 4,285,826
+COLUMNS: 11
+SCHEMA: ['State', 'District', 'Market', 'Commodity', 'Variety', 'Grade', 'Arrival_Date', 'Min_Price', 'Max_Price', 'Modal_Price', 'Commodity_Code']
+
+FILE: data\mandi_prices\mandi_daily_2019.parquet
+SIZE: 46797.10 KB
+FORMAT: PARQUET
+ROWS: 4,319,450
+COLUMNS: 11
+SCHEMA: ['State', 'District', 'Market', 'Commodity', 'Variety', 'Grade', 'Arrival_Date', 'Min_Price', 'Max_Price', 'Modal_Price', 'Commodity_Code']
+
+FILE: data\mandi_prices\mandi_daily_2020.parquet
+SIZE: 38241.67 KB
+FORMAT: PARQUET
+ROWS: 3,548,553
+COLUMNS: 11
+SCHEMA: ['State', 'District', 'Market', 'Commodity', 'Variety', 'Grade', 'Arrival_Date', 'Min_Price', 'Max_Price', 'Modal_Price', 'Commodity_Code']
+
+FILE: data\mandi_prices\mandi_daily_2021.parquet
+SIZE: 41213.18 KB
+FORMAT: PARQUET
+ROWS: 3,827,438
+COLUMNS: 11
+SCHEMA: ['State', 'District', 'Market', 'Commodity', 'Variety', 'Grade', 'Arrival_Date', 'Min_Price', 'Max_Price', 'Modal_Price', 'Commodity_Code']
+
+FILE: data\mandi_prices\mandi_daily_2022.parquet
+SIZE: 48656.33 KB
+FORMAT: PARQUET
+ROWS: 4,476,887
+COLUMNS: 11
+SCHEMA: ['State', 'District', 'Market', 'Commodity', 'Variety', 'Grade', 'Arrival_Date', 'Min_Price', 'Max_Price', 'Modal_Price', 'Commodity_Code']
+
+FILE: data\mandi_prices\mandi_daily_2023.parquet
+SIZE: 48142.05 KB
+FORMAT: PARQUET
+ROWS: 4,415,064
+COLUMNS: 11
+SCHEMA: ['State', 'District', 'Market', 'Commodity', 'Variety', 'Grade', 'Arrival_Date', 'Min_Price', 'Max_Price', 'Modal_Price', 'Commodity_Code']
+
+FILE: data\mandi_prices\mandi_daily_2024.parquet
+SIZE: 67401.24 KB
+FORMAT: PARQUET
+ROWS: 5,527,169
+COLUMNS: 11
+SCHEMA: ['State', 'District', 'Market', 'Commodity', 'Variety', 'Grade', 'Arrival_Date', 'Min_Price', 'Max_Price', 'Modal_Price', 'Commodity_Code']
+
+FILE: data\mandi_prices\mandi_daily_2025.parquet
+SIZE: 70174.18 KB
+FORMAT: PARQUET
+ROWS: 5,827,604
+COLUMNS: 11
+SCHEMA: ['State', 'District', 'Market', 'Commodity', 'Variety', 'Grade', 'Arrival_Date', 'Min_Price', 'Max_Price', 'Modal_Price', 'Commodity_Code']
+
+FILE: data\mandi_prices\mandi_daily_2026.parquet
+SIZE: 6398.36 KB
+FORMAT: PARQUET
+ROWS: 582,310
+COLUMNS: 11
+SCHEMA: ['State', 'District', 'Market', 'Commodity', 'Variety', 'Grade', 'Arrival_Date', 'Min_Price', 'Max_Price', 'Modal_Price', 'Commodity_Code']
+
+FILE: data\production_cost_integrated.csv
+SIZE: 47469.97 KB
+FORMAT: CSV
+COLUMNS: ['State', 'District', 'Crop', 'Year', 'Season', 'Area', 'Area Units', 'Production', 'Production Units', 'Yield', 'state_key', 'crop_key', 'year_key', 'unit_key', 'cul_cost_c2', 'prod_cost_c2', 'cost_status']
+SAMPLE ROWS: 5
+
+FILE: data\weather\6c05cd1b-ed59-40c2-bc31-e314f39c6971_0786aadd86b397f26d73aec262294f9b.csv
+SIZE: 23068.48 KB
+FORMAT: CSV
+COLUMNS: ['State', 'District', 'Date', 'Year', 'Month', 'Avg_rainfall', 'Agency_name']
+SAMPLE ROWS: 5
+
+FILE: data\weather\6c05cd1b-ed59-40c2-bc31-e314f39c6971_12051e968ae33867c3c4b9f5011e3366.csv
+SIZE: 32630.63 KB
+FORMAT: CSV
+COLUMNS: ['State', 'District', 'Date', 'Year', 'Month', 'Avg_rainfall', 'Agency_name']
+SAMPLE ROWS: 5
+
+FILE: data\weather\6c05cd1b-ed59-40c2-bc31-e314f39c6971_4584d4fa12ef2c93cb745f6a4fc3b03a.csv
+SIZE: 25611.97 KB
+FORMAT: CSV
+COLUMNS: ['State', 'District', 'Date', 'Year', 'Month', 'Avg_rainfall', 'Agency_name']
+SAMPLE ROWS: 5
+
+FILE: data\weather\6c05cd1b-ed59-40c2-bc31-e314f39c6971_5f993e7212d40ec1b19541e4e6b592bf.csv
+SIZE: 32380.59 KB
+FORMAT: CSV
+COLUMNS: ['State', 'District', 'Date', 'Year', 'Month', 'Avg_rainfall', 'Agency_name']
+SAMPLE ROWS: 5
+
+FILE: data\weather\6c05cd1b-ed59-40c2-bc31-e314f39c6971_69a6fb764db4a7fcbf6b3797dea7ce6e.csv
+SIZE: 32294.96 KB
+FORMAT: CSV
+COLUMNS: ['State', 'District', 'Date', 'Year', 'Month', 'Avg_rainfall', 'Agency_name']
+SAMPLE ROWS: 5
+
+FILE: data\weather\6c05cd1b-ed59-40c2-bc31-e314f39c6971_b015ac24ddd9ba5d3b11052466085f93.csv
+SIZE: 15885.14 KB
+FORMAT: CSV
+COLUMNS: ['State', 'District', 'Date', 'Year', 'Month', 'Avg_rainfall', 'Agency_name']
+SAMPLE ROWS: 5
+
+FILE: data\weather\6c05cd1b-ed59-40c2-bc31-e314f39c6971_bd3f0c7a691400acb9040f7e6177d5e2.csv
+SIZE: 16651.17 KB
+FORMAT: CSV
+COLUMNS: ['State', 'District', 'Date', 'Year', 'Month', 'Avg_rainfall', 'Agency_name']
+SAMPLE ROWS: 5
+
+FILE: data\weather\6c05cd1b-ed59-40c2-bc31-e314f39c6971_ddab30d58fb9ef60cf2281d5a92c39a4.csv
+SIZE: 32701.21 KB
+FORMAT: CSV
+COLUMNS: ['State', 'District', 'Date', 'Year', 'Month', 'Avg_rainfall', 'Agency_name']
+SAMPLE ROWS: 5
+
+FILE: data\weather\maximum_temperature\Maxtemp_MaxT_2018.GRD
+SIZE: 1370.18 KB
+FORMAT: BINARY GRD
+SIZE CHECK: Non-zero file; internal validity needs decoding.
+
+FILE: data\weather\maximum_temperature\Maxtemp_MaxT_2019.GRD
+SIZE: 1370.18 KB
+FORMAT: BINARY GRD
+SIZE CHECK: Non-zero file; internal validity needs decoding.
+
+FILE: data\weather\maximum_temperature\Maxtemp_MaxT_2020.GRD
+SIZE: 1373.93 KB
+FORMAT: BINARY GRD
+SIZE CHECK: Non-zero file; internal validity needs decoding.
+
+FILE: data\weather\maximum_temperature\Maxtemp_MaxT_2021.GRD
+SIZE: 1370.18 KB
+FORMAT: BINARY GRD
+SIZE CHECK: Non-zero file; internal validity needs decoding.
+
+FILE: data\weather\maximum_temperature\Maxtemp_MaxT_2022.GRD
+SIZE: 1370.18 KB
+FORMAT: BINARY GRD
+SIZE CHECK: Non-zero file; internal validity needs decoding.
+
+FILE: data\weather\maximum_temperature\Maxtemp_MaxT_2023.GRD
+SIZE: 1370.18 KB
+FORMAT: BINARY GRD
+SIZE CHECK: Non-zero file; internal validity needs decoding.
+
+FILE: data\weather\maximum_temperature\Maxtemp_MaxT_2024.GRD
+SIZE: 1373.93 KB
+FORMAT: BINARY GRD
+SIZE CHECK: Non-zero file; internal validity needs decoding.
+
+FILE: data\weather\maximum_temperature\Maxtemp_MaxT_2025.GRD
+SIZE: 1370.18 KB
+FORMAT: BINARY GRD
+SIZE CHECK: Non-zero file; internal validity needs decoding.
+
+FILE: data\weather\Maxtemp_MaxT_select.GRD
+SIZE: 0.00 KB
+WARNING: Empty file - cannot be used.
+
+FILE: data\weather\minmum_temperature\Mintemp_MinT_2018.GRD
+SIZE: 1370.18 KB
+FORMAT: BINARY GRD
+SIZE CHECK: Non-zero file; internal validity needs decoding.
+
+FILE: data\weather\minmum_temperature\Mintemp_MinT_2019.GRD
+SIZE: 1370.18 KB
+FORMAT: BINARY GRD
+SIZE CHECK: Non-zero file; internal validity needs decoding.
+
+FILE: data\weather\minmum_temperature\Mintemp_MinT_2020.GRD
+SIZE: 1373.93 KB
+FORMAT: BINARY GRD
+SIZE CHECK: Non-zero file; internal validity needs decoding.
+
+FILE: data\weather\minmum_temperature\Mintemp_MinT_2021.GRD
+SIZE: 1370.18 KB
+FORMAT: BINARY GRD
+SIZE CHECK: Non-zero file; internal validity needs decoding.
+
+FILE: data\weather\minmum_temperature\Mintemp_MinT_2022.GRD
+SIZE: 1370.18 KB
+FORMAT: BINARY GRD
+SIZE CHECK: Non-zero file; internal validity needs decoding.
+
+FILE: data\weather\minmum_temperature\Mintemp_MinT_2023.GRD
+SIZE: 1370.18 KB
+FORMAT: BINARY GRD
+SIZE CHECK: Non-zero file; internal validity needs decoding.
+
+FILE: data\weather\minmum_temperature\Mintemp_MinT_2024.GRD
+SIZE: 1373.93 KB
+FORMAT: BINARY GRD
+SIZE CHECK: Non-zero file; internal validity needs decoding.
+
+FILE: data\weather\minmum_temperature\Mintemp_MinT_2025.GRD
+SIZE: 1370.18 KB
+FORMAT: BINARY GRD
+SIZE CHECK: Non-zero file; internal validity needs decoding.
+
+FILE: data\weather\Mintemp_MinT_select.GRD
+SIZE: 0.00 KB
+WARNING: Empty file - cannot be used.
+
+FILE: data\weather\rainfall_districtwise_daily_imd.csv
+SIZE: 9798.49 KB
+FORMAT: CSV
+COLUMNS: ['State', 'District', 'Date', 'Daily Actual', 'Daily Normal', 'Daily Departure Per', 'Daily Category', 'Week Date', 'Weekly \nActual', 'Weekly Normal', 'Weekly Departure Per', 'Weekly Category', 'Cumulative Date', 'Cumulative Actual', 'Cumulative Normal', 'Cumulative Departue Per', 'Cumulative \nCategory', 'Monthly Date', 'Monthly Acutual', 'Monthly Normal', 'Monthly \nDeparture Per', 'Monthly Category']
+SAMPLE ROWS: 5
+
+FILE: data\weather\rainfall_statewise_daily_imd.csv
+SIZE: 579.79 KB
+FORMAT: CSV
+COLUMNS: ['State', 'Date', 'Daily Actual', 'Daily Normal', 'Daily Departure Per', 'Daily Category', 'Week Date', 'Weekly Actual', 'Weekly \nNormal', 'Weekly Departure Per', 'Weekly Category', 'Cumulative Date', 'Cumulative \nActual', 'Cumulative Normal', 'Cumulative Departue Per', 'Cumulative Category', 'Monthly Date', 'Monthly Acutual', 'Monthly Normal', 'Monthly Departure Per', 'Monthly Category']
+SAMPLE ROWS: 5
+
+===========================================================================
+INVENTORY COMPLETED
+===========================================================================

@@ -1,0 +1,54 @@
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Environment variables and secrets
+.env
+.env.*
+
+# Testing and coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE and editor settings
+.vscode/
+.idea/
+
+# Operating system files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.bak
+
+# Large raw and integrated datasets - keep locally, do not upload
+/data/mandi_prices/
+/data/mandi_prices_integrated.parquet
+/data/production_cost_integrated.csv
+/data/weather/*.csv
+/data/weather/**/*.csv
+/data/weather/**/*.GRD
+
+# Legacy nested project copy
+/crop_Production_prediction_new/
+
+# Temporary financial audit investigation scripts
+/scripts/analysis/check_*.py
+/scripts/analysis/inspect_*.py
+/scripts/analysis/investigate_*.py
+
+# Temporary audit output files
+/scripts/analysis/*.csv

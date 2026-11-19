@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ML Crop Yield Prediction & Recommendation System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <div class="brand">🌾 ML Crop Yield Prediction</div>
+        <div class="nav-links">
+            <a href="/" class="active">Predict & Analyze</a>
+            <a href="/recommend">Crop Advisor</a>
+            <a href="/weather">Weather Intelligence</a>
+            <a href="/dashboard">Dashboard</a>
+            <a href="/analytics">Analytics</a>
+        </div>
+    </nav>
+
+    <main class="main-container">
+
+        <section class="hero">
+            <span class="eyebrow">MACHINE LEARNING BASED CROP YIELD PREDICTION & RECOMMENDATION SYSTEM</span>
+            <h1>Crop Yield Prediction & Financial Estimator</h1>
+            <p>
+                Predict agricultural yield and total production, estimate selling prices, cultivation costs,
+                net profits and weather risks using verified government datasets and trained ML pipelines.
+            </p>
+
+            <div class="dataset-info">
+                <div>
+                    <strong>326,999</strong>
+                    <span>Usable Records</span>
+                </div>
+                <div>
+                    <strong>36</strong>
+                    <span>States / UTs</span>
+                </div>
+                <div>
+                    <strong>728</strong>
+                    <span>Districts</span>
+                </div>
+                <div>
+                    <strong>52</strong>
+                    <span>Unique Crops</span>
+                </div>
+                <div>
+                    <strong>29.7M</strong>
+                    <span>Mandi Transactions</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="prediction-card">
+            <div class="section-heading">
+                <h2>Crop Yield Prediction & Financial Analysis</h2>
+                <p>Select your farm location, crop, season, and acreage below.</p>
+            </div>
+
+            <form action="{{ url_for('predict.predict') }}" method="POST" class="prediction-form" id="predictForm">
+
+                <div class="form-grid">
+
+                    <div class="form-group">
+                        <label for="state">State</label>
+                        <select name="state" id="state" required onchange="updateDistricts()">
+                            <option value="">Select state</option>
+                            {% for state in states %}
+                            <option value="{{ state }}" {% if selected_state==state %}selected{% endif %}>
+                                {{ state }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="district">District</label>
+                        <select name="district" id="district" required>
+                            <option value="">Select district</option>
+                            {% for district in districts %}
+                            <option value="{{ district }}" {% if selected_district==district %}selected{% endif %}>
+                                {{ district }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="crop">Crop</label>
+                        <select name="crop" id="crop" required>
+                            <option value="">Select crop</option>
+                            {% for crop in crops %}
+                            <option value="{{ crop }}" {% if selected_crop==crop %}selected{% endif %}>
+                                {{ crop }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="year">Future Prediction Year</label>
+                        <select name="year" id="year" required>
+                            <option value="">Select future prediction year</option>
+                            {% for yr in future_years %}
+                            <option value="{{ yr }}" {% if selected_year==yr %}selected{% endif %}>
+                                {{ yr }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="season">Season</label>
+                        <select name="season" id="season" required>
+                            <option value="">Select season</option>
+                            {% for season in seasons %}
+                            <option value="{{ season }}" {% if selected_season==season %}selected{% endif %}>
+                                {{ season }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="area">Cultivated Area (hectares)</label>
+                        <input type="number" name="area" id="area" min="0.01" step="any"
+                            placeholder="e.g. 5.0" value="{{ selected_area or '' }}" required>
+                    </div>
+
+                </div>
+
+                <button type="submit" class="predict-btn">
+                    🔮 Predict Yield & Calculate Revenue
+                </button>
+
+            </form>
+
+            {% if error %}
+            <div class="error-message">
+                <h3>Prediction Error</h3>
+                <p>{{ error }}</p>
+            </div>
+            {% endif %}
+
+            {% if prediction is not none and prediction is defined %}
+            <div class="result-card">
+                <span class="result-label">PREDICTED PRODUCTION</span>
+                <h2>{{ "{:,.2f}".format(prediction) }}</h2>
+                <p>Tonnes &nbsp;|&nbsp; <strong>{{ "{:,.2f}".format(predicted_yield or (prediction / selected_area)) }} t/ha</strong> Yield</p>
+
+                <div class="prediction-details" style="margin-top: 20px;">
+                    <p><strong>State:</strong> {{ selected_state }} &nbsp;|&nbsp; <strong>District:</strong> {{ selected_district }} &nbsp;|&nbsp; <strong>Future Prediction Year:</strong> {{ selected_year }}{% if year_info %} ({{ year_info.start_year }}–{{ year_info.end_year }}){% endif %}</p>
+                    <p><strong>Crop:</strong> {{ selected_crop }} &nbsp;|&nbsp; <strong>Season:</strong> {{ selected_season }} &nbsp;|&nbsp; <strong>Area:</strong> {{ selected_area }} ha</p>
+                </div>
+            </div>
+
+            <!-- Model Disclaimer -->
+            {% if yield_disclaimer %}
+            <div style="margin-top: 15px; padding: 14px 18px; background: #fffde7; border: 1px solid #fff176; border-radius: 10px; font-size: 0.88rem; color: #5d4037;">
+                <strong>📊 Model Note:</strong> {{ yield_disclaimer }}
+            </div>
+            {% endif %}
+
+            <!-- Financial Analysis Card -->
+            {% if financials %}
+            <div class="financial-card" style="margin-top: 30px; background: white; border: 1px solid #e1e5e9; border-radius: 16px; padding: 30px; box-shadow: 0 10px 25px rgba(0,0,0,0.05);">
+                <div class="section-heading" style="border-bottom: 1px solid #edf2f7; padding-bottom: 15px; margin-bottom: 20px;">
+                    <h3 style="color: #1a202c; font-size: 1.4rem;">💰 Farmer Financial Analysis</h3>
+                    <p style="color: #718096; font-size: 0.95rem;">Gross revenue, operational costs, net return, and capital ROI projections.</p>
+                </div>
+
+                <div class="financial-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px;">
+                    <div style="background: #f8f9fa; padding: 18px; border-radius: 12px; border-left: 4px solid #2196F3;">
+                        <span style="font-size: 0.8rem; color: #718096; text-transform: uppercase;">Expected Mandi Price</span>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #1976D2; margin: 4px 0;">
+                            {% if financials.mandi_price_per_quintal %}₹{{ "{:,.2f}".format(financials.mandi_price_per_quintal) }}{% else %}Unavailable{% endif %}
+                        </div>
+                        <span style="font-size: 0.8rem; color: #555;">per Quintal ({{ financials.price_level|capitalize }})</span>
+                    </div>
+
+                    <div style="background: #f8f9fa; padding: 18px; border-radius: 12px; border-left: 4px solid #FF9800;">
+                        <span style="font-size: 0.8rem; color: #718096; text-transform: uppercase;">C2 Cultivation Cost</span>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #E65100; margin: 4px 0;">
+                            {% if financials.cul_cost_c2_per_ha %}₹{{ "{:,.2f}".format(financials.cul_cost_c2_per_ha) }}{% else %}Unavailable{% endif %}
+                        </div>
+                        <span style="font-size: 0.8rem; color: #555;">per Hectare ({% if financials.cost_level == 'state_level' %}State Benchmark{% else %}{{ financials.cost_level|capitalize }}{% endif %})</span>
+                    </div>
+
+                    <div style="background: #f8f9fa; padding: 18px; border-radius: 12px; border-left: 4px solid #4CAF50;">
+                        <span style="font-size: 0.8rem; color: #718096; text-transform: uppercase;">Estimated Gross Revenue</span>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #2e7d32; margin: 4px 0;">
+                            {% if financials.gross_revenue %}₹{{ "{:,.2f}".format(financials.gross_revenue) }}{% else %}N/A{% endif %}
+                        </div>
+                        <span style="font-size: 0.8rem; color: #555;">{{ "{:,.1f}".format(financials.total_production_quintals) }} Quintals</span>
+                    </div>
+
+                    <div style="background: #f8f9fa; padding: 18px; border-radius: 12px; border-left: 4px solid #9C27B0;">
+                        <span style="font-size: 0.8rem; color: #718096; text-transform: uppercase;">Estimated Total Cost</span>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #7B1FA2; margin: 4px 0;">
+                            {% if financials.total_cultivation_cost %}₹{{ "{:,.2f}".format(financials.total_cultivation_cost) }}{% else %}N/A{% endif %}
+                        </div>
+                        <span style="font-size: 0.8rem; color: #555;">Across {{ financials.cultivated_area_ha }} ha</span>
+                    </div>
+                </div>
+
+                <!-- Net Profit Callout -->
+                {% if financials.estimated_profit is not none %}
+                <div style="padding: 20px; border-radius: 12px; margin-bottom: 20px; {% if financials.estimated_profit >= 0 %}background: #e8f5e9; border: 1px solid #a5d6a7; color: #1b5e20;{% else %}background: #ffebee; border: 1px solid #ef9a9a; color: #b71c1c;{% endif %}">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <div>
+                            <h4 style="font-size: 1.2rem; margin-bottom: 4px;">
+                                {% if financials.estimated_profit >= 0 %}✅ Estimated Net Profit: ₹{{ "{:,.2f}".format(financials.estimated_profit) }}{% else %}⚠️ Projected Loss: -₹{{ "{:,.2f}".format(financials.estimated_profit|abs) }}{% endif %}
+                            </h4>
+                            <p style="font-size: 0.95rem; opacity: 0.9;">{{ financials.explanation }}</p>
+                        </div>
+                        <div style="text-align: right;">
+                            <span style="font-size: 2rem; font-weight: 800;">{{ "{:+.1f}".format(financials.roi_percent) }}%</span>
+                            <div style="font-size: 0.85rem; text-transform: uppercase;">Estimated ROI</div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div style="background: #fff8e1; border: 1px solid #ffe082; padding: 15px; border-radius: 10px; font-size: 0.85rem; color: #795548;">
+                    <strong>ℹ️ Calculation Basis & Disclaimers:</strong>
+                    <ul style="margin: 8px 0 0 20px; line-height: 1.5;">
+                        <li><strong>Gross Revenue</strong> = Production in Quintals ({{ "{:,.1f}".format(financials.total_production_quintals) }} q) × Mandi Price (₹{{ "{:,.2f}".format(financials.mandi_price_per_quintal or 0) }}/q).</li>
+                        <li><strong>Cultivation Cost (C2)</strong> is surveyed at state level by CACP and includes all operational seeds/fertilizer/labor costs, land rent, and fixed capital depreciation.</li>
+                        <li>{{ financials.disclaimer }}</li>
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- APMC District Market Records -->
+            {% if district_markets and district_markets.found %}
+            <div style="margin-top: 30px; background: white; border: 1px solid #e1e5e9; border-radius: 16px; padding: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.05);">
+                <div style="margin-bottom: 15px;">
+                    <h3 style="color: #1a202c; font-size: 1.3rem;">🏪 APMC Market Price Records — {{ selected_district }}, {{ selected_state }}</h3>
+                    <p style="color: #718096; font-size: 0.9rem;">
+                        Individual APMC market arrivals for {{ district_markets.crop }}.
+                        Showing {{ district_markets.shown }} of {{ district_markets.total_found }} markets.
+                    </p>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.88rem;">
+                        <thead>
+                            <tr style="background: #f8f9fa; border-bottom: 2px solid #e1e5e9;">
+                                <th style="padding: 10px 12px; text-align: left; font-weight: 600; color: #374151;">Market (APMC)</th>
+                                <th style="padding: 10px 12px; text-align: left; font-weight: 600; color: #374151;">Commodity / Variety</th>
+                                <th style="padding: 10px 12px; text-align: left; font-weight: 600; color: #374151;">Grade</th>
+                                <th style="padding: 10px 12px; text-align: right; font-weight: 600; color: #374151;">Min ₹/q</th>
+                                <th style="padding: 10px 12px; text-align: right; font-weight: 600; color: #374151;">Modal ₹/q</th>
+                                <th style="padding: 10px 12px; text-align: right; font-weight: 600; color: #374151;">Max ₹/q</th>
+                                <th style="padding: 10px 12px; text-align: left; font-weight: 600; color: #374151;">Arrival Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for m in district_markets.markets %}
+                            <tr style="border-bottom: 1px solid #f0f0f0; {% if loop.index is odd %}background: #fafafa;{% endif %}">
+                                <td style="padding: 9px 12px; font-weight: 500;">{{ m.market }}</td>
+                                <td style="padding: 9px 12px; color: #555;">{{ m.commodity }}{% if m.variety and m.variety != '—' %} / {{ m.variety }}{% endif %}</td>
+                                <td style="padding: 9px 12px; color: #777;">{{ m.grade }}</td>
+                                <td style="padding: 9px 12px; text-align: right; color: #c0392b;">{% if m.min_price %}₹{{ "{:,.0f}".format(m.min_price) }}{% else %}—{% endif %}</td>
+                                <td style="padding: 9px 12px; text-align: right; font-weight: 600; color: #1976D2;">{% if m.modal_price %}₹{{ "{:,.0f}".format(m.modal_price) }}{% else %}—{% endif %}</td>
+                                <td style="padding: 9px 12px; text-align: right; color: #2e7d32;">{% if m.max_price %}₹{{ "{:,.0f}".format(m.max_price) }}{% else %}—{% endif %}</td>
+                                <td style="padding: 9px 12px; color: #777; font-size: 0.82rem;">{{ m.arrival_date }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <p style="margin-top: 10px; font-size: 0.8rem; color: #9e9e9e; font-style: italic;">⚠️ {{ district_markets.note }}</p>
+            </div>
+            {% elif district_markets and not district_markets.found %}
+            <div style="margin-top: 20px; padding: 14px 18px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 10px; font-size: 0.88rem; color: #666;">
+                <strong>📋 APMC Market Records:</strong>
+                {{ district_markets.get('error', 'No individual market records available for this crop and district combination.') }}
+            </div>
+            {% endif %}
+
+            <!-- Weather Risk Card -->
+            {% if weather_info %}
+            <div class="weather-card" style="margin-top: 25px; background: white; border: 1px solid #e1e5e9; border-radius: 16px; padding: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.05);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <h3 style="color: #1a202c; font-size: 1.3rem;">🌦️ Seasonal Weather & Moisture Advisory</h3>
+                        <p style="color: #718096; font-size: 0.9rem;">Historical IMD rainfall observations for {{ selected_district }} ({{ weather_info.season_matched or selected_season }} Season)</p>
+                    </div>
+                    <div>
+                        <span style="display: inline-block; padding: 8px 16px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; {% if weather_info.risk_level == 'Low' %}background: #c8e6c9; color: #2e7d32;{% elif weather_info.risk_level == 'Moderate' %}background: #ffe0b2; color: #e65100;{% else %}background: #ffcdd2; color: #c62828;{% endif %}">
+                            Risk Level: {{ weather_info.risk_level }}
+                        </span>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 15px;">
+                    <div style="background: #f8f9fa; padding: 12px; border-radius: 8px;">
+                        <span style="font-size: 0.8rem; color: #718096;">Seasonal Rainfall</span>
+                        <div style="font-size: 1.2rem; font-weight: 700; color: #1976D2;">{% if weather_info.mean_seasonal_rainfall_mm %}{{ weather_info.mean_seasonal_rainfall_mm }} mm{% else %}Unobserved{% endif %}</div>
+                    </div>
+                    <div style="background: #f8f9fa; padding: 12px; border-radius: 8px;">
+                        <span style="font-size: 0.8rem; color: #718096;">Rainfall Volatility</span>
+                        <div style="font-size: 1.2rem; font-weight: 700; color: #555;">{% if weather_info.rainfall_cv_percent %}{{ weather_info.rainfall_cv_percent }}% CV{% else %}N/A{% endif %}</div>
+                    </div>
+                    <div style="background: #f8f9fa; padding: 12px; border-radius: 8px;">
+                        <span style="font-size: 0.8rem; color: #718096;">Crop Water Need</span>
+                        <div style="font-size: 1.2rem; font-weight: 700; color: #2e7d32;">{{ (weather_info.water_requirement_category or 'Moderate')|capitalize }}</div>
+                    </div>
+                </div>
+
+                <p style="font-size: 0.95rem; color: #444; line-height: 1.6;"><strong>Agronomic Analysis:</strong> {{ weather_info.explanation }}</p>
+                <p style="font-size: 0.9rem; color: #2e7d32; margin-top: 6px;"><strong>Advisory:</strong> {{ weather_info.advisory }}</p>
+            </div>
+            {% endif %}
+
+            <!-- Model Evaluation Card -->
+            {% if metrics %}
+            <div style="margin-top: 25px; padding: 20px; background: #f8f9fa; border-radius: 12px; border: 1px solid #e1e5e9;">
+                <h4 style="margin-bottom: 10px; color: #333;">Model Evaluation (Holdout Test Data)</h4>
+                <div class="metrics-grid">
+                    <div>
+                        <strong>{{ "%.4f"|format(metrics["MAE"]) }}</strong>
+                        <span>MAE (Tonnes)</span>
+                    </div>
+                    <div>
+                        <strong>{{ "%.4f"|format(metrics["RMSE"]) }}</strong>
+                        <span>RMSE (Tonnes)</span>
+                    </div>
+                    <div>
+                        <strong>{{ "%.4f"|format(metrics["R2 Score"]) }}</strong>
+                        <span>R² Score (Test)</span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% endif %}
+
+        </section>
+
+    </main>
+
+    <footer>
+        <p>Machine Learning Based Crop Yield Prediction & Recommendation System | Verified Government Datasets</p>
+    </footer>
+
+    <!-- Dependent District Selection Script -->
+    <script>
+        const stateDistricts = {{ state_districts_json|safe }};
+
+        function updateDistricts() {
+            const stateSelect = document.getElementById("state");
+            const districtSelect = document.getElementById("district");
+            const selectedState = stateSelect.value;
+
+            districtSelect.innerHTML = '<option value="">Select district</option>';
+
+            if (selectedState && stateDistricts[selectedState]) {
+                stateDistricts[selectedState].forEach(function(district) {
+                    const opt = document.createElement("option");
+                    opt.value = district;
+                    opt.textContent = district;
+                    districtSelect.appendChild(opt);
+                });
+            }
+        }
+
+        // On page load, re-populate districts if a state was pre-selected
+        window.addEventListener('DOMContentLoaded', function() {
+            const stateSelect = document.getElementById("state");
+            if (stateSelect.value) {
+                const selectedDistrict = "{{ selected_district or '' }}";
+                updateDistricts();
+                // Re-select previously chosen district
+                if (selectedDistrict) {
+                    const districtSelect = document.getElementById("district");
+                    for (let i = 0; i < districtSelect.options.length; i++) {
+                        if (districtSelect.options[i].value === selectedDistrict) {
+                            districtSelect.selectedIndex = i;
+                            break;
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+
+</body>
+
+</html>

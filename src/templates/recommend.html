@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crop Recommendation Advisor | ML Crop Yield Prediction & Recommendation System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <div class="brand">🌾 ML Crop Yield Prediction</div>
+        <div class="nav-links">
+            <a href="/">Predict & Analyze</a>
+            <a href="/recommend" class="active">Crop Advisor</a>
+            <a href="/weather">Weather Intelligence</a>
+            <a href="/dashboard">Dashboard</a>
+            <a href="/analytics">Analytics</a>
+        </div>
+    </nav>
+
+    <main class="main-container">
+
+        <section class="hero">
+            <span class="eyebrow">MACHINE LEARNING BASED CROP YIELD PREDICTION & RECOMMENDATION SYSTEM</span>
+            <h1>Crop Recommendation Engine</h1>
+            <p>
+                Discover the most viable and profitable crops for your specific district and season.
+                Our algorithm optimizes across predicted yields, APMC market prices, CACP production costs,
+                and IMD seasonal weather risks.
+            </p>
+
+            <div class="dataset-info">
+                <div>
+                    <strong>Multi-Factor</strong>
+                    <span>Scoring Model</span>
+                </div>
+                <div>
+                    <strong>Risk-Aware</strong>
+                    <span>Weather Assessment</span>
+                </div>
+                <div>
+                    <strong>Verified</strong>
+                    <span>Mandi Prices</span>
+                </div>
+                <div>
+                    <strong>CACP</strong>
+                    <span>Cost Benchmarks</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="prediction-card">
+            <div class="section-heading">
+                <h2>Select Farm Location & Land Area</h2>
+                <p>Provide your district, planned season, and land area to generate tailored crop rankings.</p>
+            </div>
+
+            <form action="{{ url_for('predict.recommend') }}" method="POST" class="prediction-form" id="recommendForm">
+
+                <div class="form-grid">
+
+                    <div class="form-group">
+                        <label for="state">State</label>
+                        <select name="state" id="state" required onchange="updateDistricts()">
+                            <option value="">Select state</option>
+                            {% for state in states %}
+                            <option value="{{ state }}" {% if selected_state==state %}selected{% endif %}>
+                                {{ state }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="district">District</label>
+                        <select name="district" id="district" required>
+                            <option value="">Select district</option>
+                            {% for district in districts %}
+                            <option value="{{ district }}" {% if selected_district==district %}selected{% endif %}>
+                                {{ district }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="season">Season</label>
+                        <select name="season" id="season" required>
+                            <option value="">Select season</option>
+                            {% for season in seasons %}
+                            <option value="{{ season }}" {% if selected_season==season %}selected{% endif %}>
+                                {{ season }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="year">Future Prediction Year</label>
+                        <select name="year" id="year" required>
+                            <option value="">Select future prediction year</option>
+                            {% for yr in future_years %}
+                            <option value="{{ yr }}" {% if selected_year==yr %}selected{% endif %}>
+                                {{ yr }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="area">Land Area (hectares)</label>
+                        <input type="number" name="area" id="area" min="0.01" step="any"
+                            placeholder="e.g. 5.0" value="{{ selected_area or '' }}" required>
+                    </div>
+
+                </div>
+
+                <button type="submit" class="predict-btn" style="background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%);">
+                    🔍 Evaluate & Rank Suitable Crops
+                </button>
+
+            </form>
+
+            {% if error %}
+            <div class="error-message" style="margin-top: 25px;">
+                <h3>Input Notice</h3>
+                <p>{{ error }}</p>
+            </div>
+            {% endif %}
+
+            {% if results and results.recommendations %}
+            <div class="recommendations-container" style="margin-top: 40px;">
+
+                <div class="section-heading" style="border-bottom: 2px solid #edf2f7; padding-bottom: 15px; margin-bottom: 25px;">
+                    <h2>Recommended Crops for {{ results.district }}, {{ results.state }} ({{ results.season }} Season &bull; {{ selected_year }})</h2>
+                    <p>Evaluated {{ results.total_evaluated }} candidate crops with historical cultivation precedent in this region.</p>
+                </div>
+
+                <!-- Top Recommended Highlight Banner -->
+                {% set top_pick = results.recommendations[0] %}
+                <div style="background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 100%); color: white; padding: 25px; border-radius: 16px; margin-bottom: 30px; box-shadow: 0 10px 25px rgba(46,125,50,0.2);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                        <div>
+                            <span style="background: #ffd54f; color: #1a202c; padding: 4px 12px; border-radius: 12px; font-weight: 700; font-size: 0.8rem; text-transform: uppercase;">
+                                ★ Top Recommended Crop
+                            </span>
+                            <h2 style="font-size: 2.2rem; color: #ffffff; margin-top: 8px;">{{ top_pick.crop }}</h2>
+                            <p style="opacity: 0.95; font-size: 1rem; max-width: 650px;">{{ top_pick.rationale }}</p>
+                        </div>
+                        <div style="text-align: right; background: rgba(255,255,255,0.15); padding: 15px 25px; border-radius: 12px;">
+                            <div style="font-size: 2.2rem; font-weight: 800; color: #ffd54f;">{{ top_pick.roi_percent or 0 }}%</div>
+                            <div style="font-size: 0.85rem; text-transform: uppercase;">Expected ROI</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Comparison Table -->
+                <h3 style="color: #1a202c; font-size: 1.3rem; margin-bottom: 15px;">📊 Multi-Crop Comparison & Feasibility Breakdown</h3>
+                
+                <div style="overflow-x: auto; margin-bottom: 25px;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem; text-align: left; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+                        <thead>
+                            <tr style="background: #2e7d32; color: white;">
+                                <th style="padding: 12px 10px;">Rank</th>
+                                <th style="padding: 12px 10px;">Crop</th>
+                                <th style="padding: 12px 10px;">Predicted Yield</th>
+                                <th style="padding: 12px 10px;">Mandi Price</th>
+                                <th style="padding: 12px 10px;">Cost (C2)</th>
+                                <th style="padding: 12px 10px;">Gross Revenue</th>
+                                <th style="padding: 12px 10px;">Estimated Profit</th>
+                                <th style="padding: 12px 10px;">ROI (%)</th>
+                                <th style="padding: 12px 10px;">Weather Risk</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in results.recommendations %}
+                            <tr style="border-bottom: 1px solid #edf2f7; {% if loop.index is odd %}background: #fbfbfb;{% endif %}">
+                                <td style="padding: 12px 10px; font-weight: 700; color: #2e7d32;">#{{ r.rank }}</td>
+                                <td style="padding: 12px 10px; font-weight: 700;">{{ r.crop }}</td>
+                                <td style="padding: 12px 10px;">{{ r.predicted_yield_t_ha }} t/ha<br><span style="font-size: 0.8rem; color: #777;">({{ r.predicted_production_tonnes }} tonnes)</span></td>
+                                <td style="padding: 12px 10px;">
+                                    {% if r.mandi_price_per_quintal %}₹{{ "{:,.0f}".format(r.mandi_price_per_quintal) }}/q<br><span style="font-size: 0.75rem; color: #1976D2;">{{ r.mandi_price_level|capitalize }}</span>{% else %}<span style="color: #999;">Unavailable</span>{% endif %}
+                                </td>
+                                <td style="padding: 12px 10px;">
+                                    {% if r.cultivation_cost_per_ha %}₹{{ "{:,.0f}".format(r.cultivation_cost_per_ha) }}/ha<br><span style="font-size: 0.75rem; color: #E65100;">{% if r.cost_coverage == 'state_level' %}State Survey{% else %}National Avg{% endif %}</span>{% else %}<span style="color: #999;">Unavailable</span>{% endif %}
+                                </td>
+                                <td style="padding: 12px 10px; font-weight: 600; color: #2e7d32;">
+                                    {% if r.gross_revenue %}₹{{ "{:,.0f}".format(r.gross_revenue) }}{% else %}N/A{% endif %}
+                                </td>
+                                <td style="padding: 12px 10px; font-weight: 700; {% if r.estimated_profit and r.estimated_profit >= 0 %}color: #2e7d32;{% elif r.estimated_profit %}color: #c62828;{% endif %}">
+                                    {% if r.estimated_profit is not none %}₹{{ "{:,.0f}".format(r.estimated_profit) }}{% else %}N/A{% endif %}
+                                </td>
+                                <td style="padding: 12px 10px; font-weight: 700; {% if r.roi_percent and r.roi_percent >= 0 %}color: #2e7d32;{% elif r.roi_percent %}color: #c62828;{% endif %}">
+                                    {% if r.roi_percent is not none %}{{ "{:+.1f}".format(r.roi_percent) }}%{% else %}N/A{% endif %}
+                                </td>
+                                <td style="padding: 12px 10px;">
+                                    <span style="display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; {% if r.weather_risk_level == 'Low' %}background: #c8e6c9; color: #2e7d32;{% elif r.weather_risk_level == 'Moderate' %}background: #ffe0b2; color: #e65100;{% else %}background: #ffcdd2; color: #c62828;{% endif %}">
+                                        {{ r.weather_risk_level }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Agricultural Advisory Notes per Crop -->
+                <h3 style="color: #1a202c; font-size: 1.2rem; margin: 25px 0 15px 0;">🌾 Agronomic Evaluation & Recommendation Justifications</h3>
+                <div style="display: flex; flex-direction: column; gap: 15px;">
+                    {% for r in results.recommendations %}
+                    <div style="background: #f8f9fa; border: 1px solid #e1e5e9; border-radius: 12px; padding: 18px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <h4 style="color: #2e7d32; font-size: 1.1rem;">#{{ r.rank }} {{ r.crop }} (Score: {{ r.composite_score }}/1.0)</h4>
+                            <span style="font-size: 0.85rem; color: #555;">Water Requirement: <strong>{{ (r.water_requirement or 'Moderate')|capitalize }}</strong></span>
+                        </div>
+                        <p style="font-size: 0.95rem; color: #444; line-height: 1.5; margin-bottom: 8px;"><strong>Rationale:</strong> {{ r.rationale }}</p>
+                        <p style="font-size: 0.85rem; color: #666;"><strong>Advisories:</strong> {{ r.weather_advisory }} &bull; {{ r.price_disclaimer }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Methodology Notice -->
+                <div style="margin-top: 30px; background: #e8f5e9; border: 1px solid #c8e6c9; border-radius: 12px; padding: 20px; font-size: 0.9rem; color: #2e7d32;">
+                    <strong>🛡️ Decision Support Principles:</strong>
+                    <ul style="margin: 8px 0 0 20px; line-height: 1.6;">
+                        <li><strong>Balanced Multi-Criteria Evaluation:</strong> Crops are evaluated using a balanced index weighting economic net returns (35%), weather resilience (30%), data certainty (20%), and yield reliability (15%).</li>
+                        <li><strong>No Pure Profit Bias:</strong> High-margin crops are not ranked first if they carry severe moisture deficits, erratic rainfall risks, or unverified cost structures.</li>
+                        <li><strong>Transparent Benchmarking:</strong> Cultivation costs and wholesale market prices are labeled as district or regional benchmarks to reflect real-world variance.</li>
+                    </ul>
+                </div>
+
+            </div>
+            {% endif %}
+
+        </section>
+
+    </main>
+
+    <footer>
+        <p>Machine Learning Based Crop Yield Prediction & Recommendation System | Verified Government Datasets</p>
+    </footer>
+
+    <!-- Dependent District Selection Script -->
+    <script>
+        const stateDistricts = {{ state_districts_json|safe }};
+
+        function updateDistricts() {
+            const stateSelect = document.getElementById("state");
+            const districtSelect = document.getElementById("district");
+            const selectedState = stateSelect.value;
+
+            districtSelect.innerHTML = '<option value="">Select district</option>';
+
+            if (selectedState && stateDistricts[selectedState]) {
+                stateDistricts[selectedState].forEach(function(district) {
+                    const opt = document.createElement("option");
+                    opt.value = district;
+                    opt.textContent = district;
+                    districtSelect.appendChild(opt);
+                });
+            }
+        }
+
+        // On page load, re-populate districts if a state was pre-selected
+        window.addEventListener('DOMContentLoaded', function() {
+            const stateSelect = document.getElementById("state");
+            if (stateSelect && stateSelect.value) {
+                const selectedDistrict = "{{ selected_district or '' }}";
+                updateDistricts();
+                if (selectedDistrict) {
+                    const districtSelect = document.getElementById("district");
+                    for (let i = 0; i < districtSelect.options.length; i++) {
+                        if (districtSelect.options[i].value === selectedDistrict) {
+                            districtSelect.selectedIndex = i;
+                            break;
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+
+</body>
+
+</html>
+

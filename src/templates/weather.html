@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Intelligence | ML Crop Yield Prediction & Recommendation System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <div class="brand">🌾 ML Crop Yield Prediction</div>
+        <div class="nav-links">
+            <a href="/">Predict & Analyze</a>
+            <a href="/recommend">Crop Advisor</a>
+            <a href="/weather" class="active">Weather Intelligence</a>
+            <a href="/dashboard">Dashboard</a>
+            <a href="/analytics">Analytics</a>
+        </div>
+    </nav>
+
+    <main class="main-container">
+
+        <section class="hero">
+            <span class="eyebrow">MACHINE LEARNING BASED CROP YIELD PREDICTION & RECOMMENDATION SYSTEM</span>
+            <h1>District Weather & Rainfall Intelligence</h1>
+            <p>
+                Analyze seasonal rainfall patterns, precipitation stability, and moisture deficits
+                using verified India Meteorological Department (IMD) historical observations.
+            </p>
+
+            <div class="dataset-info">
+                <div>
+                    <strong>3.38M</strong>
+                    <span>Daily Rainfall Rows</span>
+                </div>
+                <div>
+                    <strong>2018-2026</strong>
+                    <span>Observation Years</span>
+                </div>
+                <div>
+                    <strong>1,582</strong>
+                    <span>Weather Stations</span>
+                </div>
+                <div>
+                    <strong>7,712</strong>
+                    <span>District-Seasons</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="prediction-card">
+            <div class="section-heading">
+                <h2>Select District for Weather Profiling</h2>
+                <p>Choose your state and district to view historical precipitation trends and seasonal risk factors.</p>
+            </div>
+
+            <form action="{{ url_for('predict.weather') }}" method="POST" class="prediction-form">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="state">State</label>
+                        <select name="state" id="state" required onchange="updateDistricts()">
+                            <option value="">Select state</option>
+                            {% for state in states %}
+                            <option value="{{ state }}" {% if selected_state==state %}selected{% endif %}>
+                                {{ state }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="district">District</label>
+                        <select name="district" id="district" required>
+                            <option value="">Select district</option>
+                            {% for district in districts %}
+                            <option value="{{ district }}" {% if selected_district==district %}selected{% endif %}>
+                                {{ district }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="season">Season of Interest</label>
+                        <select name="season" id="season" required>
+                            <option value="Kharif" {% if selected_season=='Kharif' %}selected{% endif %}>Kharif (Monsoon: Jun - Oct)</option>
+                            <option value="Rabi" {% if selected_season=='Rabi' %}selected{% endif %}>Rabi (Winter: Nov - Mar)</option>
+                            <option value="Summer" {% if selected_season=='Summer' %}selected{% endif %}>Summer / Zaid (Mar - Jun)</option>
+                            <option value="Whole Year" {% if selected_season=='Whole Year' %}selected{% endif %}>Whole Year (Jan - Dec)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit" class="predict-btn" style="background: linear-gradient(135deg, #0288d1 0%, #01579b 100%);">
+                    🌧️ Analyze Weather & Precipitation Trends
+                </button>
+            </form>
+
+            {% if error %}
+            <div class="error-message" style="margin-top: 20px;">
+                <h3>Weather Notice</h3>
+                <p>{{ error }}</p>
+            </div>
+            {% endif %}
+
+            {% if weather_data and selected_district %}
+            <div style="margin-top: 35px;">
+
+                <!-- Selected Season Card -->
+                <div style="background: white; border: 1px solid #e1e5e9; border-radius: 16px; padding: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); margin-bottom: 25px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;">
+                        <div>
+                            <span style="font-size: 0.85rem; color: #718096; text-transform: uppercase; font-weight: 700;">Weather Risk Profile</span>
+                            <h2 style="color: #1a202c; font-size: 1.8rem; margin-top: 4px;">{{ selected_district }} &bull; {{ weather_data.season_matched or selected_season }} Season</h2>
+                        </div>
+                        <div>
+                            <span style="display: inline-block; padding: 8px 18px; border-radius: 20px; font-weight: 800; font-size: 1rem; {% if weather_data.risk_level == 'Low' %}background: #c8e6c9; color: #1b5e20;{% elif weather_data.risk_level == 'Moderate' %}background: #ffe0b2; color: #e65100;{% else %}background: #ffcdd2; color: #b71c1c;{% endif %}">
+                                Moisture Risk: {{ weather_data.risk_level }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                        <div style="background: #f8f9fa; padding: 16px; border-radius: 10px; border-left: 4px solid #0288d1;">
+                            <span style="font-size: 0.8rem; color: #718096;">Mean Seasonal Rainfall</span>
+                            <div style="font-size: 1.6rem; font-weight: 700; color: #01579b;">{{ weather_data.mean_seasonal_rainfall_mm or 0 }} mm</div>
+                            <span style="font-size: 0.8rem; color: #666;">Observed across {{ weather_data.years_observed or 0 }} years</span>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 16px; border-radius: 10px; border-left: 4px solid #f57c00;">
+                            <span style="font-size: 0.8rem; color: #718096;">Precipitation Volatility (CV)</span>
+                            <div style="font-size: 1.6rem; font-weight: 700; color: #e65100;">{{ weather_data.rainfall_cv_percent or 0 }}%</div>
+                            <span style="font-size: 0.8rem; color: #666;">{% if (weather_data.rainfall_cv_percent or 0) > 40 %}High erratic fluctuation{% else %}Stable rainfall pattern{% endif %}</span>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 16px; border-radius: 10px; border-left: 4px solid #2e7d32;">
+                            <span style="font-size: 0.8rem; color: #718096;">Rainfall Range</span>
+                            <div style="font-size: 1.3rem; font-weight: 700; color: #1b5e20;">{{ weather_data.min_seasonal_rainfall_mm or 0 }} - {{ weather_data.max_seasonal_rainfall_mm or 0 }} mm</div>
+                            <span style="font-size: 0.8rem; color: #666;">Min to Max recorded</span>
+                        </div>
+                    </div>
+
+                    <p style="font-size: 1rem; color: #333; line-height: 1.6;"><strong>Precipitation Diagnosis:</strong> {{ weather_data.explanation }}</p>
+                    <p style="font-size: 0.95rem; color: #0288d1; margin-top: 8px;"><strong>Farm Advisory:</strong> {{ weather_data.advisory }}</p>
+                </div>
+
+                <!-- Complete Seasonal Breakdown Table -->
+                {% if seasonal_history %}
+                <div style="background: white; border: 1px solid #e1e5e9; border-radius: 16px; padding: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); margin-bottom: 25px;">
+                    <h3 style="color: #1a202c; font-size: 1.3rem; margin-bottom: 15px;">📅 All-Season Rainfall Breakdown for {{ selected_district }}</h3>
+                    <div style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem; text-align: left;">
+                            <thead>
+                                <tr style="background: #0288d1; color: white;">
+                                    <th style="padding: 10px;">Season</th>
+                                    <th style="padding: 10px;">Mean Rainfall</th>
+                                    <th style="padding: 10px;">Min Rainfall</th>
+                                    <th style="padding: 10px;">Max Rainfall</th>
+                                    <th style="padding: 10px;">Volatility (CV %)</th>
+                                    <th style="padding: 10px;">Years Observed</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for s in seasonal_history %}
+                                <tr style="border-bottom: 1px solid #eee; {% if loop.index is odd %}background: #fafafa;{% endif %}">
+                                    <td style="padding: 10px; font-weight: 700;">{{ s.Season }}</td>
+                                    <td style="padding: 10px; font-weight: 600; color: #01579b;">{{ s.mean_rainfall_mm }} mm</td>
+                                    <td style="padding: 10px;">{{ s.min_rainfall_mm }} mm</td>
+                                    <td style="padding: 10px;">{{ s.max_rainfall_mm }} mm</td>
+                                    <td style="padding: 10px;">{{ s.rainfall_cv }}%</td>
+                                    <td style="padding: 10px;">{{ s.years_observed }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Crop Water Requirement Reference -->
+                <div style="background: white; border: 1px solid #e1e5e9; border-radius: 16px; padding: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.05);">
+                    <h3 style="color: #1a202c; font-size: 1.3rem; margin-bottom: 15px;">💧 Crop Water Requirement Reference Bands</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                        <div style="background: #e3f2fd; padding: 18px; border-radius: 12px; border: 1px solid #bbdefb;">
+                            <h4 style="color: #0d47a1; margin-bottom: 8px;">🌊 High Moisture Crops (&gt; 900 mm)</h4>
+                            <p style="font-size: 0.9rem; color: #333; margin-bottom: 8px;">Paddy/Rice, Sugarcane, Banana, Jute.</p>
+                            <span style="font-size: 0.85rem; color: #555;">Requires plentiful monsoon precipitation or assured tube-well/canal irrigation flooding.</span>
+                        </div>
+                        <div style="background: #e8f5e9; padding: 18px; border-radius: 12px; border: 1px solid #c8e6c9;">
+                            <h4 style="color: #1b5e20; margin-bottom: 8px;">🌱 Moderate Moisture Crops (400 - 800 mm)</h4>
+                            <p style="font-size: 0.9rem; color: #333; margin-bottom: 8px;">Wheat, Maize, Cotton, Groundnut, Soybean, Potato, Onion.</p>
+                            <span style="font-size: 0.85rem; color: #555;">Thrives under standard seasonal showers with supplementary furrow/drip irrigation.</span>
+                        </div>
+                        <div style="background: #fff3e0; padding: 18px; border-radius: 12px; border: 1px solid #ffe0b2;">
+                            <h4 style="color: #e65100; margin-bottom: 8px;">🌾 Low Water / Drought-Hardy (&lt; 400 mm)</h4>
+                            <p style="font-size: 0.9rem; color: #333; margin-bottom: 8px;">Bajra, Jowar, Ragi, Gram, Pulses, Mustard, Barley, Sesamum.</p>
+                            <span style="font-size: 0.85rem; color: #555;">Highly resilient for semi-arid and rainfed farming zones. Low drought vulnerability.</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            {% endif %}
+
+        </section>
+
+    </main>
+
+    <footer>
+        <p>Machine Learning Based Crop Yield Prediction & Recommendation System | Verified Government Datasets</p>
+    </footer>
+
+    <!-- Dependent District Selection Script -->
+    <script>
+        const stateDistricts = {{ state_districts_json|safe }};
+
+        function updateDistricts() {
+            const stateSelect = document.getElementById("state");
+            const districtSelect = document.getElementById("district");
+            const selectedState = stateSelect.value;
+
+            districtSelect.innerHTML = '<option value="">Select district</option>';
+
+            if (selectedState && stateDistricts[selectedState]) {
+                stateDistricts[selectedState].forEach(function(district) {
+                    const opt = document.createElement("option");
+                    opt.value = district;
+                    opt.textContent = district;
+                    districtSelect.appendChild(opt);
+                });
+            }
+        }
+
+        // On page load, re-populate districts if a state was pre-selected
+        window.addEventListener('DOMContentLoaded', function() {
+            const stateSelect = document.getElementById("state");
+            if (stateSelect && stateSelect.value) {
+                const selectedDistrict = "{{ selected_district or '' }}";
+                updateDistricts();
+                if (selectedDistrict) {
+                    const districtSelect = document.getElementById("district");
+                    for (let i = 0; i < districtSelect.options.length; i++) {
+                        if (districtSelect.options[i].value === selectedDistrict) {
+                            districtSelect.selectedIndex = i;
+                            break;
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+
+</body>
+
+</html>
+
