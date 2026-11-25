@@ -474,5 +474,264 @@ def test_agricultural_year_parsing():
     assert info3["formatted"] == "2028-29"
 
 
+def test_predict_farm_production_matches_yield_times_area(client):
+    """Regression test: hero predicted production must equal predicted_yield * area and match financial production."""
+    import re
+
+    area = 5.0
+    expected_yield = predictor.predict_yield(
+        state="Punjab",
+        district="Ludhiana",
+        crop="Wheat",
+        year="2026-27",
+        season="Rabi",
+        area=area,
+    )
+    expected_farm_prod = round(expected_yield * area, 2)
+    expected_quintals = round(expected_farm_prod * 10.0, 2)
+
+    # Confirm the district-aggregate production_model output is much larger and NOT shown as farm production
+    district_agg_prod = round(
+        predictor.predict(
+            state="Punjab",
+            district="Ludhiana",
+            crop="Wheat",
+            year="2026-27",
+            season="Rabi",
+            area=area,
+        ),
+        2,
+    )
+    assert district_agg_prod > expected_farm_prod * 10
+
+    response = client.post("/predict", data={
+        "state": "Punjab",
+        "district": "Ludhiana",
+        "crop": "Wheat",
+        "year": "2026-27",
+        "season": "Rabi",
+        "area": str(area),
+    })
+    assert response.status_code == 200
+    content = response.data.decode("utf-8")
+
+    # Extract hero <h2> inside result-card
+    m = re.search(r'<div class="result-card">.*?<h2>\s*([0-9,\.]+)\s*</h2>', content, re.DOTALL)
+    assert m is not None, "Hero production <h2> not found in /predict response"
+    displayed_prod = float(m.group(1).replace(",", ""))
+
+    assert displayed_prod == expected_farm_prod
+    assert displayed_prod != district_agg_prod
+    assert f"{expected_quintals:,.1f} Quintals" in content
 
 
+def test_predict_zero_and_invalid_area_inputs(client):
+    """Regression test: zero, negative, and non-numeric area inputs are rejected safely."""
+    for bad_area in ["0", "0.0", "-5", "abc", "nan", "inf"]:
+        response = client.post("/predict", data={
+            "state": "Punjab",
+            "district": "Ludhiana",
+            "crop": "Wheat",
+            "year": "2026-27",
+            "season": "Rabi",
+            "area": bad_area,
+        })
+        assert response.status_code == 200
+        content = response.data.decode("utf-8")
+        assert "Prediction Error" in content
+        assert "PREDICTED PRODUCTION" not in content
+
+
+def test_recommend_renders_future_year_disclaimer(client):
+    """Task 3 regression test: /recommend must render the honest future-year planning disclaimer."""
+    response = client.post("/recommend", data={
+        "state": "Punjab",
+        "district": "Ludhiana",
+        "season": "Rabi",
+        "year": "2026-27",
+        "area": "5.0",
+    })
+    assert response.status_code == 200
+    content = response.data.decode("utf-8")
+    assert "Model Note:" in content
+    assert "Predictions do not vary across future agricultural years" in content
+
+
+def test_weather_unobserved_district_does_not_fabricate_zero(client):
+    """Task 4 regression test: /weather displays Unobserved/N/A instead of 0 mm or 0% when missing."""
+    response = client.post("/weather", data={
+        "state": "Punjab",
+        "district": "NonExistentDistrict999",
+        "season": "Kharif",
+    })
+    assert response.status_code == 200
+    content = response.data.decode("utf-8")
+    assert "Unobserved" in content
+    assert "No IMD station match" in content
+    assert ">0 mm<" not in content
+    assert ">0%<" not in content
+
+
+def test_train_models_paths_and_chronological_split_config():
+    """Task 5 regression test: verify train_models.py resolves project root paths and strict cutoff year."""
+    from pathlib import Path
+    from scripts.modeling import train_models as tm
+
+    assert tm.PROJECT_ROOT == Path(PROJECT_DIR)
+    assert tm.PRODUCTION_CSV.exists()
+    assert tm.MODELS_DIR.exists()
+    assert tm.TRAIN_CUTOFF_YEAR == 2015
+
+
+def test_weather_post_with_explicit_crop(client):
+    """Task 7 regression test: /weather evaluates water risk for the user-selected crop."""
+    response = client.post("/weather", data={
+        "state": "Andhra Pradesh",
+        "district": "Kurnool",
+        "season": "Kharif",
+        "crop": "Gram",
+    })
+    assert response.status_code == 200
+    content = response.data.decode("utf-8")
+    assert "Kurnool" in content
+    assert "Drought-hardy" in content or "Moisture Risk:" in content
+
+
+def test_canonical_model_plot_route_serves_png(client):
+    """Task 9 regression test: /models/plots/<filename> serves canonical diagnostic PNGs."""
+    resp = client.get("/models/plots/yield_prediction_model_comparison.png")
+    assert resp.status_code == 200
+    assert resp.mimetype == "image/png"
+    assert len(resp.data) > 1000
+
+
+def test_weather_page_renders_temperature_profile(client):
+    """Task 10 regression test: /weather renders state-level IMD 1x1 deg temperature & heat-stress card."""
+    resp = client.post("/weather", data={
+        "state": "Punjab",
+        "district": "Ludhiana",
+        "season": "Rabi",
+        "crop": "Wheat",
+    })
+    assert resp.status_code == 200
+    content = resp.data.decode("utf-8")
+    assert "Heat Stress:" in content
+    assert "IMD 1°×1° Temperature Grid" in content
+    assert "°C" in content
+
+
+def test_predict_renders_per_market_financial_scenarios(client):
+    """Task 11 regression test: /predict renders per-market Est. Revenue, Est. Profit, and ROI columns."""
+    resp = client.post("/predict", data={
+        "state": "Andhra Pradesh",
+        "district": "Kurnool",
+        "crop": "Gram",
+        "year": "2026-27",
+        "season": "Rabi",
+        "area": "3.0",
+    })
+    assert resp.status_code == 200
+    content = resp.data.decode("utf-8")
+    assert "Per-Market Financial Scenarios" in content
+    assert "Est. Revenue" in content
+    assert "Est. Profit" in content
+    assert "ROI %" in content
+
+
+def test_dashboard_metrics_and_no_unintegrated_temperature_claim(client):
+    """Task 12 regression test: /dashboard binds real metrics and does not claim unintegrated temperature rows."""
+    resp = client.get("/dashboard")
+    assert resp.status_code == 200
+    content = resp.data.decode("utf-8")
+    assert "326,999" in content
+    assert "3,880" in content
+    assert "CACP Cost Surveys" in content
+    assert "2,808,042" not in content
+
+
+def test_yield_model_excludes_bales_and_nuts_crops():
+    """Regression test: document that Bales/Nuts-only crops are out-of-distribution for Tonnes yield_model."""
+    cat_enc = predictor.yield_model.named_steps["preprocessor"].named_transformers_["cat"]
+    learned_crops = set(cat_enc.categories_[2])
+    # Cotton(lint), Jute, Mesta (Bales) and Coconut (Nuts) have 0 Tonnes rows in training CSV
+    for non_tonnes_crop in ["Cotton(lint)", "Jute", "Mesta", "Coconut"]:
+        assert non_tonnes_crop not in learned_crops
+    # Standard Tonnes crops must be present
+    for tonnes_crop in ["Wheat", "Rice", "Gram", "Sugarcane"]:
+        assert tonnes_crop in learned_crops
+
+
+def test_negative_raw_yield_and_ood_input_handling(client):
+    """Phase 2.1 & 2.3 regression test: unsupported Bales/Nuts crops are rejected clearly and promoted Tweedie model produces non-negative raw yields."""
+    import math
+    import pandas as pd
+    import pytest
+    from src.models.predictor import UnsupportedCropError
+
+    # 1. All 4 non-Tonnes crops must raise UnsupportedCropError (never silently encode as -1)
+    for bad_crop in ["Cotton(lint)", "Jute", "Mesta", "Coconut"]:
+        with pytest.raises(UnsupportedCropError) as exc_info:
+            predictor.predict_yield(
+                state="Maharashtra",
+                district="Aurangabad",
+                crop=bad_crop,
+                year="2026-27",
+                season="Kharif",
+                area=5.0,
+            )
+        assert "not supported" in str(exc_info.value).lower()
+
+        # Verify POST /predict also rejects clearly without rendering a production card
+        resp = client.post("/predict", data={
+            "state": "Maharashtra",
+            "district": "Aurangabad",
+            "crop": bad_crop,
+            "year": "2026-27",
+            "season": "Kharif",
+            "area": "5.0",
+        })
+        assert resp.status_code == 200
+        html = resp.data.decode("utf-8")
+        assert "Prediction Error" in html
+        assert "not supported" in html.lower()
+        assert "PREDICTED PRODUCTION" not in html
+
+    # 2. Previously negative in-distribution case (Kerala / WAYANAD / Sesamum / Whole Year)
+    # must now produce a strictly positive raw prediction under promoted Tweedie model
+    low_yield_row = pd.DataFrame([{
+        "State": "Kerala",
+        "District": "WAYANAD",
+        "Crop": "Sesamum",
+        "Season": "Whole Year",
+        "Year_Num": 2018.0,
+    }])
+    raw_pred = float(predictor.yield_model.predict(low_yield_row)[0])
+    assert math.isfinite(raw_pred)
+    assert raw_pred > 0.0
+
+
+def test_yield_predictions_across_small_medium_large_areas():
+    """Phase 2.2 regression test: yield per hectare must be strictly invariant to farmer plot area."""
+    import math
+
+    for state, district, crop, season in [
+        ("Punjab", "Ludhiana", "Wheat", "Rabi"),
+        ("Andhra Pradesh", "Kurnool", "Gram", "Rabi"),
+        ("Andhra Pradesh", "Kurnool", "Rice", "Kharif"),
+        ("Uttar Pradesh", "Lucknow", "Sugarcane", "Whole Year"),
+    ]:
+        yields = []
+        for area in [1.0, 5.0, 100.0, 1000.0, 50000.0]:
+            y = predictor.predict_yield(
+                state=state,
+                district=district,
+                crop=crop,
+                year="2026-27",
+                season=season,
+                area=area,
+            )
+            assert math.isfinite(y)
+            assert y > 0.0
+            yields.append(y)
+        # All areas must produce the exact same yield per hectare
+        assert max(yields) - min(yields) < 1e-6, f"Yield varied by area for {state}/{district}/{crop}: {yields}"

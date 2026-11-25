@@ -148,9 +148,14 @@
 
             {% if prediction is not none and prediction is defined %}
             <div class="result-card">
-                <span class="result-label">PREDICTED PRODUCTION</span>
+                <span class="result-label">PREDICTED PRODUCTION (FARM-LEVEL)</span>
                 <h2>{{ "{:,.2f}".format(prediction) }}</h2>
-                <p>Tonnes &nbsp;|&nbsp; <strong>{{ "{:,.2f}".format(predicted_yield or (prediction / selected_area)) }} t/ha</strong> Yield</p>
+                <p>
+                    Tonnes
+                    {% if financials %}({{ "{:,.1f}".format(financials.total_production_quintals) }} Quintals){% endif %}
+                    &nbsp;|&nbsp;
+                    <strong>{{ "{:,.2f}".format(predicted_yield if predicted_yield is not none else 0) }} t/ha</strong> Yield &times; {{ selected_area }} ha
+                </p>
 
                 <div class="prediction-details" style="margin-top: 20px;">
                     <p><strong>State:</strong> {{ selected_state }} &nbsp;|&nbsp; <strong>District:</strong> {{ selected_district }} &nbsp;|&nbsp; <strong>Future Prediction Year:</strong> {{ selected_year }}{% if year_info %} ({{ year_info.start_year }}–{{ year_info.end_year }}){% endif %}</p>
@@ -236,39 +241,45 @@
             </div>
             {% endif %}
 
-            <!-- APMC District Market Records -->
+            <!-- APMC District Market Records & Per-Market Financial Scenario Comparison -->
             {% if district_markets and district_markets.found %}
             <div style="margin-top: 30px; background: white; border: 1px solid #e1e5e9; border-radius: 16px; padding: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.05);">
                 <div style="margin-bottom: 15px;">
-                    <h3 style="color: #1a202c; font-size: 1.3rem;">🏪 APMC Market Price Records — {{ selected_district }}, {{ selected_state }}</h3>
+                    <h3 style="color: #1a202c; font-size: 1.3rem;">🏪 APMC Market Price Records &amp; Per-Market Financial Scenarios — {{ selected_district }}, {{ selected_state }}</h3>
                     <p style="color: #718096; font-size: 0.9rem;">
-                        Individual APMC market arrivals for {{ district_markets.crop }}.
+                        Historical APMC wholesale arrivals for {{ district_markets.crop }} with independent revenue, profit, and ROI calculated for {{ selected_area }} ha ({{ "{:,.1f}".format(financials.total_production_quintals) }} q).
                         Showing {{ district_markets.shown }} of {{ district_markets.total_found }} markets.
                     </p>
                 </div>
                 <div style="overflow-x: auto;">
-                    <table style="width: 100%; border-collapse: collapse; font-size: 0.88rem;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.86rem;">
                         <thead>
                             <tr style="background: #f8f9fa; border-bottom: 2px solid #e1e5e9;">
-                                <th style="padding: 10px 12px; text-align: left; font-weight: 600; color: #374151;">Market (APMC)</th>
-                                <th style="padding: 10px 12px; text-align: left; font-weight: 600; color: #374151;">Commodity / Variety</th>
-                                <th style="padding: 10px 12px; text-align: left; font-weight: 600; color: #374151;">Grade</th>
-                                <th style="padding: 10px 12px; text-align: right; font-weight: 600; color: #374151;">Min ₹/q</th>
-                                <th style="padding: 10px 12px; text-align: right; font-weight: 600; color: #374151;">Modal ₹/q</th>
-                                <th style="padding: 10px 12px; text-align: right; font-weight: 600; color: #374151;">Max ₹/q</th>
-                                <th style="padding: 10px 12px; text-align: left; font-weight: 600; color: #374151;">Arrival Date</th>
+                                <th style="padding: 10px 10px; text-align: left; font-weight: 600; color: #374151;">Market (APMC)</th>
+                                <th style="padding: 10px 10px; text-align: left; font-weight: 600; color: #374151;">Commodity / Variety</th>
+                                <th style="padding: 10px 10px; text-align: left; font-weight: 600; color: #374151;">Grade</th>
+                                <th style="padding: 10px 10px; text-align: right; font-weight: 600; color: #374151;">Modal ₹/q</th>
+                                <th style="padding: 10px 10px; text-align: right; font-weight: 600; color: #374151;">Est. Revenue</th>
+                                <th style="padding: 10px 10px; text-align: right; font-weight: 600; color: #374151;">Est. Profit</th>
+                                <th style="padding: 10px 10px; text-align: right; font-weight: 600; color: #374151;">ROI %</th>
+                                <th style="padding: 10px 10px; text-align: left; font-weight: 600; color: #374151;">Arrival Date</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for m in district_markets.markets %}
+                            {% for m in (market_scenarios or district_markets.markets) %}
                             <tr style="border-bottom: 1px solid #f0f0f0; {% if loop.index is odd %}background: #fafafa;{% endif %}">
-                                <td style="padding: 9px 12px; font-weight: 500;">{{ m.market }}</td>
-                                <td style="padding: 9px 12px; color: #555;">{{ m.commodity }}{% if m.variety and m.variety != '—' %} / {{ m.variety }}{% endif %}</td>
-                                <td style="padding: 9px 12px; color: #777;">{{ m.grade }}</td>
-                                <td style="padding: 9px 12px; text-align: right; color: #c0392b;">{% if m.min_price %}₹{{ "{:,.0f}".format(m.min_price) }}{% else %}—{% endif %}</td>
-                                <td style="padding: 9px 12px; text-align: right; font-weight: 600; color: #1976D2;">{% if m.modal_price %}₹{{ "{:,.0f}".format(m.modal_price) }}{% else %}—{% endif %}</td>
-                                <td style="padding: 9px 12px; text-align: right; color: #2e7d32;">{% if m.max_price %}₹{{ "{:,.0f}".format(m.max_price) }}{% else %}—{% endif %}</td>
-                                <td style="padding: 9px 12px; color: #777; font-size: 0.82rem;">{{ m.arrival_date }}</td>
+                                <td style="padding: 9px 10px; font-weight: 500;">{{ m.market }}</td>
+                                <td style="padding: 9px 10px; color: #555;">{{ m.commodity }}{% if m.variety and m.variety != '—' %} / {{ m.variety }}{% endif %}</td>
+                                <td style="padding: 9px 10px; color: #777;">{{ m.grade }}</td>
+                                <td style="padding: 9px 10px; text-align: right; font-weight: 600; color: #1976D2;">{% if m.modal_price %}₹{{ "{:,.0f}".format(m.modal_price) }}{% else %}N/A{% endif %}</td>
+                                <td style="padding: 9px 10px; text-align: right; color: #2e7d32;">{% if m.gross_revenue is not none %}₹{{ "{:,.0f}".format(m.gross_revenue) }}{% else %}N/A{% endif %}</td>
+                                <td style="padding: 9px 10px; text-align: right; font-weight: 600; {% if m.estimated_profit is not none and m.estimated_profit >= 0 %}color: #2e7d32;{% elif m.estimated_profit is not none %}color: #c62828;{% else %}color: #777;{% endif %}">
+                                    {% if m.estimated_profit is not none %}₹{{ "{:,.0f}".format(m.estimated_profit) }}{% else %}N/A{% endif %}
+                                </td>
+                                <td style="padding: 9px 10px; text-align: right; font-weight: 600; {% if m.roi_percent is not none and m.roi_percent >= 0 %}color: #2e7d32;{% elif m.roi_percent is not none %}color: #c62828;{% else %}color: #777;{% endif %}">
+                                    {% if m.roi_percent is not none %}{{ "{:+.1f}".format(m.roi_percent) }}%{% else %}N/A{% endif %}
+                                </td>
+                                <td style="padding: 9px 10px; color: #777; font-size: 0.82rem;">{{ m.arrival_date }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>

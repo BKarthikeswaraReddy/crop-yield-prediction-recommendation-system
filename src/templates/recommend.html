@@ -139,6 +139,12 @@
                     <p>Evaluated {{ results.total_evaluated }} candidate crops with historical cultivation precedent in this region.</p>
                 </div>
 
+                {% if yield_disclaimer %}
+                <div style="margin-bottom: 20px; padding: 14px 18px; background: #fffde7; border: 1px solid #fff176; border-radius: 10px; font-size: 0.88rem; color: #5d4037;">
+                    <strong>📊 Model Note:</strong> {{ yield_disclaimer }}
+                </div>
+                {% endif %}
+
                 <!-- Top Recommended Highlight Banner -->
                 {% set top_pick = results.recommendations[0] %}
                 <div style="background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 100%); color: white; padding: 25px; border-radius: 16px; margin-bottom: 30px; box-shadow: 0 10px 25px rgba(46,125,50,0.2);">
@@ -151,7 +157,7 @@
                             <p style="opacity: 0.95; font-size: 1rem; max-width: 650px;">{{ top_pick.rationale }}</p>
                         </div>
                         <div style="text-align: right; background: rgba(255,255,255,0.15); padding: 15px 25px; border-radius: 12px;">
-                            <div style="font-size: 2.2rem; font-weight: 800; color: #ffd54f;">{{ top_pick.roi_percent or 0 }}%</div>
+                            <div style="font-size: 2.2rem; font-weight: 800; color: #ffd54f;">{% if top_pick.roi_percent is not none %}{{ "{:+.1f}".format(top_pick.roi_percent) }}%{% else %}N/A{% endif %}</div>
                             <div style="font-size: 0.85rem; text-transform: uppercase;">Expected ROI</div>
                         </div>
                     </div>

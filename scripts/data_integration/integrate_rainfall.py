@@ -1,6 +1,6 @@
 """
 Rainfall Data Integration Pipeline — Stage 1 Weather Preparation
-Crop Production Prediction and Farmer Decision Support System
+Machine Learning Based Crop Yield Prediction & Recommendation System
 
 Consolidates district-wise and state-wise rainfall CSV files into standardized,
 deduplicated Parquet datasets with full data quality auditing.
@@ -41,17 +41,50 @@ import pyarrow.parquet as pq
 # PATHS
 # -----------------------------------------------------------------------------
 
-SCRIPT_DIR = Path(__file__).resolve().parent
-DATA_DIR = SCRIPT_DIR / "data"
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+DATA_DIR = PROJECT_ROOT / "data"
 WEATHER_DIR = DATA_DIR / "weather"
 
 DISTRICT_OUTPUT = WEATHER_DIR / "rainfall_districtwise_integrated.parquet"
 STATEWISE_OUTPUT = WEATHER_DIR / "rainfall_statewise_integrated.parquet"
+SEASON_SUMMARY_OUTPUT = WEATHER_DIR / "rainfall_district_season_summary.parquet"
 SUMMARY_FILE = WEATHER_DIR / "rainfall_integration_summary.csv"
 
 # Temporary files for safe writing
 DISTRICT_TEMP = WEATHER_DIR / "rainfall_districtwise_integrated.tmp.parquet"
 STATEWISE_TEMP = WEATHER_DIR / "rainfall_statewise_integrated.tmp.parquet"
+SEASON_SUMMARY_TEMP = WEATHER_DIR / "rainfall_district_season_summary.tmp.parquet"
+
+# Canonical state name aliases (resolves 2018-2025 vs 2026 IMD casing/spelling drift)
+STATE_NAME_ALIASES = {
+    "ANDAMAN & NICOBAR": "ANDAMAN AND NICOBAR ISLANDS",
+    "ANDAMAN & NICOBAR ISLANDS": "ANDAMAN AND NICOBAR ISLANDS",
+    "CHHATISGARH": "CHHATTISGARH",
+    "DADRA & NAGAR HAVELI": "DADRA AND NAGAR HAVELI",
+    "DAMAN & DIU": "DAMAN AND DIU",
+    "JAMMU & KASHMIR": "JAMMU AND KASHMIR",
+    "LADDAKH": "LADAKH",
+    "NCT OF DELHI": "DELHI",
+    "ORISSA": "ODISHA",
+    "PONDICHERRY": "PUDUCHERRY",
+    "TAMILNADU": "TAMIL NADU",
+    "UTTARANCHAL": "UTTARAKHAND",
+}
+
+SEASON_MONTHS = {
+    "Kharif": [6, 7, 8, 9, 10],
+    "Rabi": [11, 12, 1, 2, 3],
+    "Summer": [3, 4, 5, 6],
+    "Autumn": [9, 10, 11],
+    "Winter": [12, 1, 2],
+    "Whole Year": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+}
+
+
+def normalize_state_name(state: str) -> str:
+    """Normalize state names consistently across IMD sources."""
+    cleaned = " ".join(str(state).strip().upper().split())
+    return STATE_NAME_ALIASES.get(cleaned, cleaned)
 
 # -----------------------------------------------------------------------------
 # SCHEMAS
@@ -358,6 +391,82 @@ def verify_outputs():
     del st, sdf
 
 
+def build_district_season_summary() -> pd.DataFrame:
+    """Aggregate normalized district-season rainfall summary from integrated district Parquet.
+
+    Normalizes State and District names so 2018-2025 and 2026 IMD sources merge
+    into a single canonical row per (State_Clean, District_Upper, Season).
+    Never fabricates missing rainfall observations.
+    """
+    if not DISTRICT_OUTPUT.exists():
+        raise FileNotFoundError(f"Missing integrated district rainfall parquet: {DISTRICT_OUTPUT}")
+
+    df = pd.read_parquet(
+        DISTRICT_OUTPUT,
+        columns=["State", "District", "Year", "Month", "Rainfall"],
+    )
+    df = df.dropna(subset=["State", "District", "Year", "Month", "Rainfall"]).copy()
+    df["State_Clean"] = df["State"].map(normalize_state_name)
+    df["District_Upper"] = df["District"].astype(str).str.strip().str.upper()
+
+    season_frames = []
+    for season_name, months in SEASON_MONTHS.items():
+        sub = df[df["Month"].isin(months)]
+        if sub.empty:
+            continue
+
+        # Sum daily rainfall per (State, District, Year) for the season
+        yearly = (
+            sub.groupby(["State_Clean", "District_Upper", "Year"], as_index=False)["Rainfall"]
+            .sum()
+            .rename(columns={"Rainfall": "seasonal_rainfall_mm"})
+        )
+
+        # Aggregate across observed years
+        agg = (
+            yearly.groupby(["State_Clean", "District_Upper"], as_index=False)["seasonal_rainfall_mm"]
+            .agg(
+                mean_rainfall_mm="mean",
+                min_rainfall_mm="min",
+                max_rainfall_mm="max",
+                std_rainfall_mm="std",
+                years_observed="count",
+            )
+        )
+        agg["Season"] = season_name
+        agg["rainfall_cv"] = np.where(
+            (agg["years_observed"] >= 2) & (agg["mean_rainfall_mm"] > 0),
+            (agg["std_rainfall_mm"] / agg["mean_rainfall_mm"]) * 100.0,
+            np.nan,
+        )
+        for col in ["mean_rainfall_mm", "min_rainfall_mm", "max_rainfall_mm", "std_rainfall_mm", "rainfall_cv"]:
+            agg[col] = agg[col].round(2)
+
+        season_frames.append(agg)
+
+    summary_df = pd.concat(season_frames, ignore_index=True)
+    summary_df = summary_df[
+        [
+            "State_Clean",
+            "District_Upper",
+            "mean_rainfall_mm",
+            "min_rainfall_mm",
+            "max_rainfall_mm",
+            "std_rainfall_mm",
+            "years_observed",
+            "Season",
+            "rainfall_cv",
+        ]
+    ].sort_values(["State_Clean", "District_Upper", "Season"]).reset_index(drop=True)
+
+    if SEASON_SUMMARY_TEMP.exists():
+        SEASON_SUMMARY_TEMP.unlink()
+    summary_df.to_parquet(SEASON_SUMMARY_TEMP, index=False, compression="snappy")
+    os.replace(SEASON_SUMMARY_TEMP, SEASON_SUMMARY_OUTPUT)
+    print(f"[OK] District-season summary saved: {SEASON_SUMMARY_OUTPUT} ({len(summary_df):,} rows)")
+    return summary_df
+
+
 # -----------------------------------------------------------------------------
 # MAIN
 # -----------------------------------------------------------------------------
@@ -365,7 +474,7 @@ def verify_outputs():
 def main():
     print("=" * 85)
     print("RAINFALL DATA INTEGRATION PIPELINE — STAGE 1")
-    print("Crop Production Prediction and Farmer Decision Support System")
+    print("Machine Learning Based Crop Yield Prediction & Recommendation System")
     print("=" * 85)
 
     # 1. District-level integration

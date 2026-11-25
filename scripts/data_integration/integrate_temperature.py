@@ -1,6 +1,6 @@
 """
 Temperature GRD Data Integration Pipeline
-Crop Production Prediction and Farmer Decision Support System
+Machine Learning Based Crop Yield Prediction & Recommendation System
 
 Decodes IMD binary GRD files for maximum and minimum temperature (2018-2025).
 Grid: 31x31 (Lat 7.5-37.5°N, Lon 67.5-97.5°E, 1° resolution).
@@ -225,7 +225,7 @@ def process_year(year: int) -> tuple:
 def main():
     print("=" * 85)
     print("TEMPERATURE GRD INTEGRATION PIPELINE")
-    print("Crop Production Prediction and Farmer Decision Support System")
+    print("Machine Learning Based Crop Yield Prediction & Recommendation System")
     print("=" * 85)
 
     # Discover available years

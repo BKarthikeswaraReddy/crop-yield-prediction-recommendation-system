@@ -8,4 +8,4 @@ Linear Regression,Yield Prediction,5.7109,11.7927,0.0965,0.115,261337,65335
 Decision Tree,Yield Prediction,1.4269,4.8021,0.8502,0.9716,261337,65335
 Random Forest,Yield Prediction,1.268,4.0328,0.8943,0.9786,261337,65335
 Gradient Boosting,Yield Prediction,1.9191,4.9448,0.8412,0.8868,261337,65335
-XGBoost,Yield Prediction,1.3984,3.875,0.9024,0.954,261337,65335
+XGBoost,Yield Prediction,1.2885,3.9658,0.8998,0.9527,257050,69636

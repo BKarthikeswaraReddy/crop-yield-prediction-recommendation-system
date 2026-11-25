@@ -508,4 +508,166 @@ def test_zero_and_negative_area_safety():
     assert res_neg["total_production_tonnes"] == 0.0
 
 
+# -----------------------------------------------------------------------------
+# 7. Task 2 Regression Tests: Rainfall State Normalization & Disambiguation
+# -----------------------------------------------------------------------------
 
+def test_weather_punjab_ludhiana_multiyear_observations(weather_intel):
+    """Verify Punjab/Ludhiana uses merged multi-year IMD observations (not 1-year 0% CV duplicate)."""
+    res = weather_intel.assess_weather_risk(
+        state="Punjab", district="Ludhiana", season="Kharif", crop="Rice"
+    )
+    assert res["is_observed"] is True
+    assert res["state"] == "PUNJAB"
+    assert res["years_observed"] >= 7
+    assert res["mean_seasonal_rainfall_mm"] is not None and res["mean_seasonal_rainfall_mm"] > 0
+    assert res["rainfall_cv_percent"] is not None and res["rainfall_cv_percent"] > 0
+
+
+def test_weather_ap_kurnool_multiyear_observations(weather_intel):
+    """Verify Andhra Pradesh/Kurnool uses merged multi-year IMD observations."""
+    res = weather_intel.assess_weather_risk(
+        state="Andhra Pradesh", district="Kurnool", season="Kharif", crop="Groundnut"
+    )
+    assert res["is_observed"] is True
+    assert res["state"] == "ANDHRA PRADESH"
+    assert res["years_observed"] >= 7
+    assert res["mean_seasonal_rainfall_mm"] is not None and res["mean_seasonal_rainfall_mm"] > 0
+    assert res["rainfall_cv_percent"] is not None and res["rainfall_cv_percent"] > 0
+
+
+def test_weather_aurangabad_disambiguated_across_states(weather_intel):
+    """Verify identically named district Aurangabad resolves distinctly for Bihar vs Maharashtra."""
+    res_br = weather_intel.assess_weather_risk(
+        state="Bihar", district="Aurangabad", season="Kharif", crop="Rice"
+    )
+    res_mh = weather_intel.assess_weather_risk(
+        state="Maharashtra", district="Aurangabad", season="Kharif", crop="Cotton"
+    )
+    assert res_br["is_observed"] is True
+    assert res_mh["is_observed"] is True
+    assert res_br["state"] == "BIHAR"
+    assert res_mh["state"] == "MAHARASHTRA"
+    assert res_br["mean_seasonal_rainfall_mm"] != res_mh["mean_seasonal_rainfall_mm"]
+
+
+def test_weather_case_insensitive_state_and_district(weather_intel):
+    """Verify capitalization and whitespace variations resolve identically."""
+    r1 = weather_intel.assess_weather_risk("Punjab", "Ludhiana", "Kharif", "Rice")
+    r2 = weather_intel.assess_weather_risk("  punjab ", " LUDHIANA ", "kharif", "rice")
+    r3 = weather_intel.assess_weather_risk("PUNJAB", "ludhiana", "Kharif", "Rice")
+    assert r1["mean_seasonal_rainfall_mm"] == r2["mean_seasonal_rainfall_mm"] == r3["mean_seasonal_rainfall_mm"]
+    assert r1["years_observed"] == r2["years_observed"] == r3["years_observed"]
+
+
+def test_weather_missing_observation_not_fabricated(weather_intel):
+    """Verify missing district/state weather returns Unrated with None rainfall (never fabricated 0)."""
+    res = weather_intel.assess_weather_risk(
+        state="Punjab", district="NonExistentDistrict999", season="Kharif", crop="Wheat"
+    )
+    assert res["is_observed"] is False
+    assert res["mean_seasonal_rainfall_mm"] is None
+    assert res["rainfall_cv_percent"] is None
+    assert res["risk_level"] == "Unrated"
+
+    # Also verify wrong state for an existing district does not silently leak another state's data
+    res_wrong_state = weather_intel.assess_weather_risk(
+        state="Kerala", district="Aurangabad", season="Kharif", crop="Rice"
+    )
+    assert res_wrong_state["is_observed"] is False
+    assert res_wrong_state["mean_seasonal_rainfall_mm"] is None
+
+
+# -----------------------------------------------------------------------------
+# 8. Task 10 Regression Tests: IMD State-Level 1-Deg Temperature Intelligence
+# -----------------------------------------------------------------------------
+
+def test_temperature_profile_punjab_rabi_and_ap_kharif(weather_intel):
+    """Verify state-level 1x1 deg IMD temperature aggregation and heat-stress classification."""
+    punjab = weather_intel.get_state_temperature_profile("Punjab", "Rabi", "Wheat")
+    assert punjab["is_observed"] is True
+    assert punjab["spatial_resolution"] == "state_1deg_grid"
+    assert punjab["grid_points_matched"] >= 1
+    assert punjab["years_observed"] == 8
+    assert punjab["mean_max_temp_c"] > punjab["mean_min_temp_c"]
+    assert punjab["heat_stress_level"] in ["Low", "Moderate", "High"]
+
+    ap = weather_intel.get_state_temperature_profile("Andhra Pradesh", "Kharif", "Rice")
+    assert ap["is_observed"] is True
+    assert ap["grid_points_matched"] >= 1
+    assert ap["mean_max_temp_c"] > 25.0
+
+
+def test_temperature_profile_unmapped_state_not_fabricated(weather_intel):
+    """Verify unmapped/unknown states return is_observed=False with None temperatures."""
+    unmapped = weather_intel.get_state_temperature_profile("Chandigarh", "Kharif", "Wheat")
+    assert unmapped["is_observed"] is False
+    assert unmapped["mean_max_temp_c"] is None
+    assert unmapped["mean_min_temp_c"] is None
+    assert unmapped["heat_stress_level"] == "Unobserved"
+
+    unknown = weather_intel.get_state_temperature_profile("NonExistentState", "Rabi", "Wheat")
+    assert unknown["is_observed"] is False
+    assert unknown["mean_max_temp_c"] is None
+
+
+# -----------------------------------------------------------------------------
+# 9. Task 11 Regression Tests: Per-Market Financial Scenario Comparison
+# -----------------------------------------------------------------------------
+
+def test_per_market_financial_scenarios_independent_calculation(mandi_intel, cost_calc):
+    """Verify revenue, profit, and ROI are calculated independently per APMC market."""
+    markets_res = mandi_intel.get_district_markets("Andhra Pradesh", "Kurnool", "Gram", max_markets=5)
+    assert markets_res["found"] is True
+    cost_info = cost_calc.get_cultivation_cost("Andhra Pradesh", "Gram")
+
+    scenarios = FinancialCalculator.calculate_market_scenarios(
+        predicted_yield_t_ha=1.01,
+        cultivated_area_ha=3.0,
+        markets=markets_res["markets"],
+        cul_cost_c2_per_ha=cost_info["cul_cost_c2_per_ha"],
+        crop_name="Gram",
+        state_name="Andhra Pradesh",
+        cost_level=cost_info["cost_coverage"],
+    )
+    assert len(scenarios) == len(markets_res["markets"])
+    for s in scenarios:
+        assert s["market"]
+        assert s["arrival_date"]
+        expected_rev = round(30.30 * s["modal_price"], 2)
+        expected_cost = round(3.0 * cost_info["cul_cost_c2_per_ha"], 2)
+        expected_profit = round(expected_rev - expected_cost, 2)
+        assert s["gross_revenue"] == expected_rev
+        assert s["total_cultivation_cost"] == expected_cost
+        assert s["estimated_profit"] == expected_profit
+
+    # Verify descending profit ordering
+    profits = [s["estimated_profit"] for s in scenarios if s["estimated_profit"] is not None]
+    assert profits == sorted(profits, reverse=True)
+
+
+def test_per_market_scenarios_missing_cost_and_price():
+    """Verify per-market scenarios handle missing cost or missing modal price without fabrication."""
+    fake_markets = [
+        {"market": "Market A", "commodity": "Coriander", "variety": "Local", "grade": "FAQ", "modal_price": 8000.0, "arrival_date": "2025-04-01"},
+        {"market": "Market B", "commodity": "Coriander", "variety": "Local", "grade": "FAQ", "modal_price": None, "arrival_date": "2025-04-01"},
+    ]
+    scenarios = FinancialCalculator.calculate_market_scenarios(
+        predicted_yield_t_ha=1.5,
+        cultivated_area_ha=2.0,
+        markets=fake_markets,
+        cul_cost_c2_per_ha=None,
+        crop_name="Coriander",
+        state_name="Karnataka",
+        cost_level="cost_unavailable",
+    )
+    assert len(scenarios) == 2
+    by_name = {s["market"]: s for s in scenarios}
+    assert by_name["Market A"]["gross_revenue"] == 240000.0
+    assert by_name["Market A"]["estimated_profit"] is None
+    assert by_name["Market A"]["roi_percent"] is None
+    assert by_name["Market A"]["financial_status"] == "cost_unavailable"
+
+    assert by_name["Market B"]["gross_revenue"] is None
+    assert by_name["Market B"]["estimated_profit"] is None
+    assert by_name["Market B"]["financial_status"] == "price_and_cost_unavailable"

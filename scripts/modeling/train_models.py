@@ -1,6 +1,6 @@
 """
 ML Model Training Pipeline
-Crop Production Prediction and Farmer Decision Support System
+Machine Learning Based Crop Yield Prediction & Recommendation System
 
 Trains and compares regression models for:
   A. Crop Production Prediction (target: Production in tonnes)
@@ -26,9 +26,13 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 import joblib
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
+try:
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+except ImportError:
+    matplotlib = None
+    plt = None
 
 from sklearn.model_selection import train_test_split
 from sklearn.compose import ColumnTransformer
@@ -50,9 +54,10 @@ except ImportError:
 
 # -------------------------------------------------------------------------
 SCRIPT_DIR = Path(__file__).resolve().parent
-DATA_DIR = SCRIPT_DIR / "data"
-MODELS_DIR = SCRIPT_DIR / "models"
-PLOTS_DIR = SCRIPT_DIR / "models" / "plots"
+PROJECT_ROOT = SCRIPT_DIR.parent.parent
+DATA_DIR = PROJECT_ROOT / "data"
+MODELS_DIR = PROJECT_ROOT / "models"
+PLOTS_DIR = MODELS_DIR / "plots"
 
 MODELS_DIR.mkdir(exist_ok=True)
 PLOTS_DIR.mkdir(exist_ok=True)
@@ -60,6 +65,7 @@ PLOTS_DIR.mkdir(exist_ok=True)
 # Input data
 PRODUCTION_CSV = DATA_DIR / "India Agriculture Crop Production.csv"
 PRODUCTION_COST_CSV = DATA_DIR / "production_cost_integrated.csv"
+TRAIN_CUTOFF_YEAR = 2015  # Strict chronological split: train <= 2015, test >= 2016
 
 
 def load_and_prepare_data():
@@ -89,12 +95,8 @@ def load_and_prepare_data():
     # Remove infinities
     df = df[np.isfinite(df["Area"]) & np.isfinite(df["Production"])].copy()
 
-    # Compute yield
+    # Compute yield (outlier trimming is performed strictly on training data after split)
     df["Yield"] = df["Production"] / df["Area"]
-
-    # Remove extreme yield outliers (top 0.1%)
-    yield_99_9 = df["Yield"].quantile(0.999)
-    df = df[df["Yield"] <= yield_99_9].copy()
 
     # Clean string columns
     for col in ["State", "District", "Crop", "Season"]:
@@ -109,7 +111,7 @@ def load_and_prepare_data():
     return df
 
 
-def get_models():
+def get_models(target_col="Production"):
     """Return dict of model name -> model instance."""
     models = {
         "Linear Regression": LinearRegression(),
@@ -126,11 +128,20 @@ def get_models():
         ),
     }
     if HAS_XGBOOST:
-        models["XGBoost"] = XGBRegressor(
-            n_estimators=150, max_depth=8, learning_rate=0.1,
-            min_child_weight=5, random_state=42, n_jobs=-1,
-            verbosity=0
-        )
+        if target_col == "Yield":
+            # Tweedie log-link (p=1.5) handles zero-yields natively and guarantees strictly positive outputs
+            models["XGBoost"] = XGBRegressor(
+                objective="reg:tweedie", tweedie_variance_power=1.5,
+                n_estimators=200, max_depth=8, learning_rate=0.1,
+                min_child_weight=5, random_state=42, n_jobs=-1,
+                verbosity=0
+            )
+        else:
+            models["XGBoost"] = XGBRegressor(
+                n_estimators=150, max_depth=8, learning_rate=0.1,
+                min_child_weight=5, random_state=42, n_jobs=-1,
+                verbosity=0
+            )
     return models
 
 
@@ -157,18 +168,27 @@ def train_and_compare(df, target_col, target_name, categorical_features,
     X = df[categorical_features + numerical_features].copy()
     y = df[target_col].copy()
 
-    # Chronological split using Year_Num
+    # Strict chronological split by calendar year (no boundary-year overlap)
     if "Year_Num" in df.columns:
-        # Sort by year for chronological split
-        sorted_idx = np.argsort(df["Year_Num"].values)
-        X_sorted = X.iloc[sorted_idx]
-        y_sorted = y.iloc[sorted_idx]
-        split_point = int(len(X_sorted) * 0.8)
-        X_train = X_sorted.iloc[:split_point]
-        X_test = X_sorted.iloc[split_point:]
-        y_train = y_sorted.iloc[:split_point]
-        y_test = y_sorted.iloc[split_point:]
-        print(f"Chronological split: Train={len(X_train):,} (earlier years), Test={len(X_test):,} (later years)")
+        train_mask = df["Year_Num"] <= TRAIN_CUTOFF_YEAR
+        test_mask = df["Year_Num"] > TRAIN_CUTOFF_YEAR
+        train_df = df[train_mask].copy()
+        test_df = df[test_mask].copy()
+
+        # Fit 99.9th percentile outlier cap strictly on training data to prevent distribution leakage
+        if "Yield" in train_df.columns and len(train_df) > 0:
+            yield_cap = train_df["Yield"].quantile(0.999)
+            train_df = train_df[train_df["Yield"] <= yield_cap].copy()
+            test_df = test_df[test_df["Yield"] <= yield_cap].copy()
+
+        X_train = train_df[categorical_features + numerical_features].copy()
+        y_train = train_df[target_col].copy()
+        X_test = test_df[categorical_features + numerical_features].copy()
+        y_test = test_df[target_col].copy()
+        print(
+            f"Strict chronological split (<= {TRAIN_CUTOFF_YEAR} vs > {TRAIN_CUTOFF_YEAR}): "
+            f"Train={len(X_train):,}, Test={len(X_test):,}"
+        )
     else:
         X_train, X_test, y_train, y_test = train_test_split(
             X, y, test_size=0.2, random_state=42
@@ -365,7 +385,7 @@ def plot_model_comparison(all_results):
 def main():
     print("=" * 85)
     print("ML MODEL TRAINING PIPELINE")
-    print("Crop Production Prediction and Farmer Decision Support System")
+    print("Machine Learning Based Crop Yield Prediction & Recommendation System")
     print("=" * 85)
 
     df = load_and_prepare_data()
@@ -379,17 +399,18 @@ def main():
 
     all_results = []
 
-    # A. Production prediction
+    # A. Production prediction (district-level aggregate, includes Area)
     prod_results, prod_pipeline, prod_best = train_and_compare(
         df, "Production", "Production Prediction",
-        categorical_features, numerical_features, get_models()
+        categorical_features, numerical_features, get_models("Production")
     )
     all_results.extend(prod_results)
 
-    # B. Yield prediction
+    # B. Yield prediction (area-independent: excludes district-aggregate Area to prevent scale confounding)
+    yield_numerical_features = ["Year_Num"]
     yield_results, yield_pipeline, yield_best = train_and_compare(
         df, "Yield", "Yield Prediction",
-        categorical_features, numerical_features, get_models()
+        categorical_features, yield_numerical_features, get_models("Yield")
     )
     all_results.extend(yield_results)
 
@@ -416,10 +437,10 @@ def main():
     print(f"Yield model saved: {yield_model_path}")
     print(f"  Best algorithm: {yield_best}")
 
-    # Save metadata
+    # Save metadata (portable project-relative paths)
     metadata = {
         "training_date": datetime.now().isoformat(),
-        "dataset": str(PRODUCTION_CSV),
+        "dataset": str(PRODUCTION_CSV.relative_to(PROJECT_ROOT)),
         "total_records": len(df),
         "features": {
             "categorical": categorical_features,
@@ -427,11 +448,11 @@ def main():
         },
         "production_model": {
             "best_algorithm": prod_best,
-            "model_path": str(prod_model_path),
+            "model_path": str(prod_model_path.relative_to(PROJECT_ROOT)),
         },
         "yield_model": {
             "best_algorithm": yield_best,
-            "model_path": str(yield_model_path),
+            "model_path": str(yield_model_path.relative_to(PROJECT_ROOT)),
         },
         "all_results": all_results,
         "dataset_stats": {

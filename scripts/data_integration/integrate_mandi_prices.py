@@ -1,6 +1,6 @@
 """
 Mandi Prices Integration Pipeline
-Crop Production Prediction and Farmer Decision Support System
+Machine Learning Based Crop Yield Prediction & Recommendation System
 
 Consolidates 26 yearly mandi price Parquet files (2001-2026) into one memory-efficient,
 schema-enforced Parquet dataset using PyArrow ParquetWriter streaming.
@@ -163,7 +163,7 @@ def run_integration():
     """Execute the full 26-year mandi prices integration pipeline."""
     print("=" * 85)
     print("MANDI PRICES INTEGRATION PIPELINE")
-    print("Crop Production Prediction and Farmer Decision Support System")
+    print("Machine Learning Based Crop Yield Prediction & Recommendation System")
     print("=" * 85)
 
     # 1. Load and validate crop mapping CSV

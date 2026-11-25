@@ -2,7 +2,7 @@ import os
 import json
 from pathlib import Path
 import pandas as pd
-from flask import Flask, render_template
+from flask import Flask, render_template, send_from_directory
 
 from src.routes.predict import predict_bp, predictor, mandi_intel, cost_calc, weather_intel
 from src.models.state_district_map import get_districts as get_auth_districts
@@ -126,7 +126,8 @@ def dashboard():
     return render_template(
         "dashboard.html",
         metrics_data=metrics_data,
-        price_samples=price_samples
+        price_samples=price_samples,
+        usable_records=len(predictor.data) if predictor.data is not None else 0,
     )
 
 
@@ -150,14 +151,14 @@ def analytics():
             pass
 
     plots = [
-        {"id": "prod_comp", "title": "Production Models Comparison (R², RMSE, MAE)", "filename": "plots/production_prediction_model_comparison.png"},
-        {"id": "prod_fit", "title": "Production Model: Actual vs Predicted", "filename": "plots/production_prediction_actual_vs_predicted.png"},
-        {"id": "prod_imp", "title": "Production Model: Feature Importance", "filename": "plots/production_prediction_feature_importance.png"},
-        {"id": "prod_res", "title": "Production Model: Residual Distribution", "filename": "plots/production_prediction_residuals.png"},
-        {"id": "yield_comp", "title": "Yield Models Comparison (R², RMSE, MAE)", "filename": "plots/yield_prediction_model_comparison.png"},
-        {"id": "yield_fit", "title": "Yield Model: Actual vs Predicted", "filename": "plots/yield_prediction_actual_vs_predicted.png"},
-        {"id": "yield_imp", "title": "Yield Model: Feature Importance", "filename": "plots/yield_prediction_feature_importance.png"},
-        {"id": "yield_res", "title": "Yield Model: Residual Distribution", "filename": "plots/yield_prediction_residuals.png"},
+        {"id": "prod_comp", "title": "Production Models Comparison (R², RMSE, MAE)", "filename": "production_prediction_model_comparison.png"},
+        {"id": "prod_fit", "title": "Production Model: Actual vs Predicted", "filename": "production_prediction_actual_vs_predicted.png"},
+        {"id": "prod_imp", "title": "Production Model: Feature Importance", "filename": "production_prediction_feature_importance.png"},
+        {"id": "prod_res", "title": "Production Model: Residual Distribution", "filename": "production_prediction_residuals.png"},
+        {"id": "yield_comp", "title": "Yield Models Comparison (R², RMSE, MAE)", "filename": "yield_prediction_model_comparison.png"},
+        {"id": "yield_fit", "title": "Yield Model: Actual vs Predicted", "filename": "yield_prediction_actual_vs_predicted.png"},
+        {"id": "yield_imp", "title": "Yield Model: Feature Importance", "filename": "yield_prediction_feature_importance.png"},
+        {"id": "yield_res", "title": "Yield Model: Residual Distribution", "filename": "yield_prediction_residuals.png"},
     ]
 
     return render_template(
@@ -166,6 +167,12 @@ def analytics():
         metrics_data=metrics_data,
         plots=plots
     )
+
+
+@app.route("/models/plots/<path:filename>")
+def serve_model_plot(filename):
+    """Serve diagnostic plot images directly from canonical models/plots/ directory."""
+    return send_from_directory(MODELS_DIR / "plots", filename)
 
 
 if __name__ == "__main__":

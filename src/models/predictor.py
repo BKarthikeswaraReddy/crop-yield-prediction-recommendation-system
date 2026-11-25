@@ -15,6 +15,20 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from src.models.year_utils import parse_agricultural_year
 
 
+class UnsupportedCropError(ValueError):
+    """Raised when a requested crop is not supported by the Tonnes-based yield model."""
+
+
+# Crops whose official dataset records are exclusively in non-Tonnes units
+UNSUPPORTED_NON_TONNES_CROPS = {
+    "COTTON(LINT)": ("Cotton(lint)", "Bales"),
+    "COTTON": ("Cotton(lint)", "Bales"),
+    "JUTE": ("Jute", "Bales"),
+    "MESTA": ("Mesta", "Bales"),
+    "COCONUT": ("Coconut", "Nuts"),
+}
+
+
 class Predictor:
 
     def __init__(self, data_path):
@@ -230,8 +244,42 @@ class Predictor:
         prediction = self.model.predict(input_data)
         return max(0.0, float(prediction[0]))
 
+    def get_supported_yield_crops(self):
+        """Return the set of crop names learned by the serialized yield model."""
+        if self.yield_model is None:
+            return None
+        pipeline = getattr(self.yield_model, "regressor_", self.yield_model)
+        if hasattr(pipeline, "named_steps") and "preprocessor" in pipeline.named_steps:
+            pre = pipeline.named_steps["preprocessor"]
+            if hasattr(pre, "named_transformers_") and "cat" in pre.named_transformers_:
+                cat_enc = pre.named_transformers_["cat"]
+                if hasattr(cat_enc, "categories_") and len(cat_enc.categories_) >= 3:
+                    return set(cat_enc.categories_[2])
+        return None
+
+    def validate_supported_crop(self, crop):
+        """Validate that crop is supported by the Tonnes-based yield model (never silently encode as -1)."""
+        crop_clean = str(crop).strip()
+        crop_upper = crop_clean.upper()
+
+        if crop_upper in UNSUPPORTED_NON_TONNES_CROPS:
+            canonical, unit = UNSUPPORTED_NON_TONNES_CROPS[crop_upper]
+            raise UnsupportedCropError(
+                f"Crop '{canonical}' is not supported by the current Tonnes-based yield model "
+                f"because its official dataset production unit is '{unit}', not Tonnes. "
+                "No invented unit conversion is applied."
+            )
+
+        learned_crops = self.get_supported_yield_crops()
+        if learned_crops is not None and crop_clean not in learned_crops:
+            raise UnsupportedCropError(
+                f"Crop '{crop_clean}' is not present in the validated Tonnes training dataset "
+                "and cannot be reliably predicted by the current yield model."
+            )
+
     def predict_yield(self, state, district, crop, year, season, area):
-        """Predict crop yield in Tonnes/Hectare."""
+        """Predict crop yield in Tonnes/Hectare with explicit unsupported-crop validation."""
+        self.validate_supported_crop(crop)
 
         year_info = parse_agricultural_year(year)
         year_num = year_info["year_num"]
@@ -248,7 +296,10 @@ class Predictor:
 
         if self.yield_model is not None:
             prediction = self.yield_model.predict(input_data)
-            return max(0.0, float(prediction[0]))
+            val = float(prediction[0])
+            if not pd.notna(val) or abs(val) == float('inf'):
+                raise ValueError("Yield model returned a non-finite value.")
+            return max(0.0, val)
         else:
             # Fallback to production / area
             prod = self.predict(state, district, crop, year, season, area)

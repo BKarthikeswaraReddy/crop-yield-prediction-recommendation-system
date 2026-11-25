@@ -1,6 +1,6 @@
 """
 Farmer Decision Support & Crop Recommendation Engine
-Crop Production Prediction and Farmer Decision Support System
+Machine Learning Based Crop Yield Prediction & Recommendation System
 
 Synthesizes:
   1. ML Production and Yield Predictions (Phase 1 Models)

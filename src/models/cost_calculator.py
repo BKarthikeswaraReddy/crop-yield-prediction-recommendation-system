@@ -1,6 +1,6 @@
 """
 Cultivation Cost Calculator
-Crop Production Prediction and Farmer Decision Support System
+Machine Learning Based Crop Yield Prediction & Recommendation System
 
 Retrieves and calculates C2 Cost of Cultivation (per hectare) and C2 Cost of Production (per quintal)
 from official Commission for Agricultural Costs and Prices (CACP) survey data.

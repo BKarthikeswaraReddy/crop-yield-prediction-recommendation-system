@@ -92,6 +92,18 @@
                             <option value="Whole Year" {% if selected_season=='Whole Year' %}selected{% endif %}>Whole Year (Jan - Dec)</option>
                         </select>
                     </div>
+
+                    <div class="form-group">
+                        <label for="crop">Crop (Optional)</label>
+                        <select name="crop" id="crop">
+                            <option value="">Auto (Rice for Kharif / Wheat for Rabi)</option>
+                            {% for crop in crops %}
+                            <option value="{{ crop }}" {% if selected_crop==crop %}selected{% endif %}>
+                                {{ crop }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
                 </div>
 
                 <button type="submit" class="predict-btn" style="background: linear-gradient(135deg, #0288d1 0%, #01579b 100%);">
@@ -126,24 +138,63 @@
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
                         <div style="background: #f8f9fa; padding: 16px; border-radius: 10px; border-left: 4px solid #0288d1;">
                             <span style="font-size: 0.8rem; color: #718096;">Mean Seasonal Rainfall</span>
-                            <div style="font-size: 1.6rem; font-weight: 700; color: #01579b;">{{ weather_data.mean_seasonal_rainfall_mm or 0 }} mm</div>
-                            <span style="font-size: 0.8rem; color: #666;">Observed across {{ weather_data.years_observed or 0 }} years</span>
+                            <div style="font-size: 1.6rem; font-weight: 700; color: #01579b;">{% if weather_data.mean_seasonal_rainfall_mm is not none %}{{ weather_data.mean_seasonal_rainfall_mm }} mm{% else %}Unobserved{% endif %}</div>
+                            <span style="font-size: 0.8rem; color: #666;">{% if weather_data.is_observed %}Observed across {{ weather_data.years_observed }} years{% else %}No IMD station match{% endif %}</span>
                         </div>
                         <div style="background: #f8f9fa; padding: 16px; border-radius: 10px; border-left: 4px solid #f57c00;">
                             <span style="font-size: 0.8rem; color: #718096;">Precipitation Volatility (CV)</span>
-                            <div style="font-size: 1.6rem; font-weight: 700; color: #e65100;">{{ weather_data.rainfall_cv_percent or 0 }}%</div>
-                            <span style="font-size: 0.8rem; color: #666;">{% if (weather_data.rainfall_cv_percent or 0) > 40 %}High erratic fluctuation{% else %}Stable rainfall pattern{% endif %}</span>
+                            <div style="font-size: 1.6rem; font-weight: 700; color: #e65100;">{% if weather_data.rainfall_cv_percent is not none %}{{ weather_data.rainfall_cv_percent }}%{% else %}N/A{% endif %}</div>
+                            <span style="font-size: 0.8rem; color: #666;">{% if weather_data.rainfall_cv_percent is none %}Insufficient multi-year data{% elif weather_data.rainfall_cv_percent > 40 %}High erratic fluctuation{% else %}Stable rainfall pattern{% endif %}</span>
                         </div>
                         <div style="background: #f8f9fa; padding: 16px; border-radius: 10px; border-left: 4px solid #2e7d32;">
                             <span style="font-size: 0.8rem; color: #718096;">Rainfall Range</span>
-                            <div style="font-size: 1.3rem; font-weight: 700; color: #1b5e20;">{{ weather_data.min_seasonal_rainfall_mm or 0 }} - {{ weather_data.max_seasonal_rainfall_mm or 0 }} mm</div>
-                            <span style="font-size: 0.8rem; color: #666;">Min to Max recorded</span>
+                            <div style="font-size: 1.3rem; font-weight: 700; color: #1b5e20;">{% if weather_data.min_seasonal_rainfall_mm is not none and weather_data.max_seasonal_rainfall_mm is not none %}{{ weather_data.min_seasonal_rainfall_mm }} – {{ weather_data.max_seasonal_rainfall_mm }} mm{% else %}Unobserved{% endif %}</div>
+                            <span style="font-size: 0.8rem; color: #666;">{% if weather_data.is_observed %}Min to Max recorded{% else %}Range unavailable{% endif %}</span>
                         </div>
                     </div>
 
                     <p style="font-size: 1rem; color: #333; line-height: 1.6;"><strong>Precipitation Diagnosis:</strong> {{ weather_data.explanation }}</p>
                     <p style="font-size: 0.95rem; color: #0288d1; margin-top: 8px;"><strong>Farm Advisory:</strong> {{ weather_data.advisory }}</p>
                 </div>
+
+                <!-- Regional Temperature & Heat-Stress Profile (IMD 1°×1° Grid) -->
+                {% if temp_data %}
+                <div style="background: white; border: 1px solid #e1e5e9; border-radius: 16px; padding: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); margin-bottom: 25px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 18px;">
+                        <div>
+                            <span style="font-size: 0.85rem; color: #718096; text-transform: uppercase; font-weight: 700;">State-Level IMD 1°×1° Temperature Grid (2018–2025)</span>
+                            <h3 style="color: #1a202c; font-size: 1.4rem; margin-top: 4px;">🌡️ {{ selected_state or temp_data.state }} &bull; {{ temp_data.season_matched }} Thermal &amp; Heat-Stress Profile</h3>
+                        </div>
+                        <div>
+                            <span style="display: inline-block; padding: 8px 18px; border-radius: 20px; font-weight: 800; font-size: 0.95rem; {% if temp_data.heat_stress_level == 'Low' %}background: #c8e6c9; color: #1b5e20;{% elif temp_data.heat_stress_level == 'Moderate' %}background: #ffe0b2; color: #e65100;{% elif temp_data.heat_stress_level == 'High' %}background: #ffcdd2; color: #b71c1c;{% else %}background: #eeeeee; color: #555;{% endif %}">
+                                Heat Stress: {{ temp_data.heat_stress_level }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 16px;">
+                        <div style="background: #f8f9fa; padding: 14px; border-radius: 10px; border-left: 4px solid #e53935;">
+                            <span style="font-size: 0.8rem; color: #718096;">Mean Max Temp</span>
+                            <div style="font-size: 1.45rem; font-weight: 700; color: #c62828;">{% if temp_data.mean_max_temp_c is not none %}{{ temp_data.mean_max_temp_c }} °C{% else %}Unobserved{% endif %}</div>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 14px; border-radius: 10px; border-left: 4px solid #1e88e5;">
+                            <span style="font-size: 0.8rem; color: #718096;">Mean Min Temp</span>
+                            <div style="font-size: 1.45rem; font-weight: 700; color: #1565c0;">{% if temp_data.mean_min_temp_c is not none %}{{ temp_data.mean_min_temp_c }} °C{% else %}Unobserved{% endif %}</div>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 14px; border-radius: 10px; border-left: 4px solid #fb8c00;">
+                            <span style="font-size: 0.8rem; color: #718096;">Peak Recorded Max</span>
+                            <div style="font-size: 1.45rem; font-weight: 700; color: #e65100;">{% if temp_data.peak_max_temp_c is not none %}{{ temp_data.peak_max_temp_c }} °C{% else %}Unobserved{% endif %}</div>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 14px; border-radius: 10px; border-left: 4px solid #546e7a;">
+                            <span style="font-size: 0.8rem; color: #718096;">Grid Coverage</span>
+                            <div style="font-size: 1.25rem; font-weight: 700; color: #37474f;">{% if temp_data.is_observed %}{{ temp_data.grid_points_matched }} grid cells{% else %}Unmapped{% endif %}</div>
+                        </div>
+                    </div>
+
+                    <p style="font-size: 0.95rem; color: #333; line-height: 1.6;"><strong>Thermal Diagnosis:</strong> {{ temp_data.explanation }}</p>
+                    <p style="font-size: 0.82rem; color: #777; margin-top: 8px; font-style: italic;">ℹ️ {{ temp_data.disclaimer }}</p>
+                </div>
+                {% endif %}
 
                 <!-- Complete Seasonal Breakdown Table -->
                 {% if seasonal_history %}
@@ -168,7 +219,7 @@
                                     <td style="padding: 10px; font-weight: 600; color: #01579b;">{{ s.mean_rainfall_mm }} mm</td>
                                     <td style="padding: 10px;">{{ s.min_rainfall_mm }} mm</td>
                                     <td style="padding: 10px;">{{ s.max_rainfall_mm }} mm</td>
-                                    <td style="padding: 10px;">{{ s.rainfall_cv }}%</td>
+                                    <td style="padding: 10px;">{% if s.rainfall_cv is not none and s.rainfall_cv == s.rainfall_cv %}{{ s.rainfall_cv }}%{% else %}N/A{% endif %}</td>
                                     <td style="padding: 10px;">{{ s.years_observed }}</td>
                                 </tr>
                                 {% endfor %}

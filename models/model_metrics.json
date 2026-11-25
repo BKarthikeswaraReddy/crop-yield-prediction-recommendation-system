@@ -1,6 +1,6 @@
 {
   "training_date": "2026-11-13T00:01:06.647022",
-  "dataset": "C:\\karthik\\Big Data Analatics\\crop_Production_prediction_new-20251117T092135Z-1-001\\crop_Production_prediction_new\\crop-production-predictor\\data\\India Agriculture Crop Production.csv",
+  "dataset": "data/India Agriculture Crop Production.csv",
   "total_records": 326672,
   "features": {
     "categorical": [
@@ -16,11 +16,20 @@
   },
   "production_model": {
     "best_algorithm": "XGBoost",
-    "model_path": "C:\\karthik\\Big Data Analatics\\crop_Production_prediction_new-20251117T092135Z-1-001\\crop_Production_prediction_new\\crop-production-predictor\\models\\production_model.joblib"
+    "model_path": "models/production_model.joblib"
   },
   "yield_model": {
-    "best_algorithm": "XGBoost",
-    "model_path": "C:\\karthik\\Big Data Analatics\\crop_Production_prediction_new-20251117T092135Z-1-001\\crop_Production_prediction_new\\crop-production-predictor\\models\\yield_model.joblib"
+    "best_algorithm": "XGBoost (Tweedie p=1.5, Area-Independent)",
+    "model_path": "models/yield_model.joblib",
+    "features": [
+      "State",
+      "District",
+      "Crop",
+      "Season",
+      "Year_Num"
+    ],
+    "objective": "reg:tweedie (tweedie_variance_power=1.5)",
+    "holdout_negative_predictions": 0
   },
   "all_results": [
     {
@@ -116,12 +125,12 @@
     {
       "model": "XGBoost",
       "target": "Yield Prediction",
-      "MAE": 1.3984,
-      "RMSE": 3.875,
-      "R2_test": 0.9024,
-      "R2_train": 0.954,
-      "train_size": 261337,
-      "test_size": 65335
+      "MAE": 1.2885,
+      "RMSE": 3.9658,
+      "R2_test": 0.8998,
+      "R2_train": 0.9527,
+      "train_size": 257050,
+      "test_size": 69636
     }
   ],
   "dataset_stats": {

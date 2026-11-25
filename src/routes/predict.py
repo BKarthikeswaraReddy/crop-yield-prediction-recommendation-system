@@ -1,5 +1,6 @@
 import os
 import json
+import math
 from pathlib import Path
 from flask import Blueprint, request, render_template, jsonify
 
@@ -61,7 +62,7 @@ def predict():
 
     try:
         area_float = float(area)
-        if area_float <= 0:
+        if not math.isfinite(area_float) or area_float <= 0:
             raise ValueError('Area must be greater than zero.')
 
         if predictor.model is None:
@@ -71,14 +72,10 @@ def predict():
         year_info = parse_agricultural_year(year)
 
         # 1. Physical ML Predictions
-        production = predictor.predict(
-            state=state,
-            district=district,
-            crop=crop,
-            year=year_info["formatted"],
-            season=season,
-            area=area_float
-        )
+        # Use validated yield model (t/ha) to derive farm-scale production:
+        # farm_production_tonnes = predicted_yield * cultivated_area_ha
+        # (production_model.joblib is trained on district-level census aggregates
+        # and is NOT suitable for individual farmer plot sizes.)
         predicted_yield = predictor.predict_yield(
             state=state,
             district=district,
@@ -87,6 +84,7 @@ def predict():
             season=season,
             area=area_float
         )
+        farm_production_tonnes = round(predicted_yield * area_float, 2)
 
         # 2. Mandi Price Intelligence
         price_info = mandi_intel.get_price_intelligence(state, district, crop)
@@ -94,7 +92,7 @@ def predict():
         # 3. Cultivation Cost Calculator
         cost_info = cost_calc.get_cultivation_cost(state, crop, str(year_info["start_year"]))
 
-        # 4. Financial Economics
+        # 4. Financial Economics (uses exact same farm_production_tonnes = yield * area)
         financials = FinancialCalculator.calculate(
             predicted_yield_t_ha=predicted_yield,
             cultivated_area_ha=area_float,
@@ -109,12 +107,24 @@ def predict():
         # 5. Weather Risk Assessment
         weather_info = weather_intel.assess_weather_risk(state, district, season, crop)
 
-        # 6. Individual APMC Market Records
+        # 6. Individual APMC Market Records & Per-Market Financial Scenarios
         district_markets = mandi_intel.get_district_markets(state, district, crop)
+        market_scenarios = []
+        if district_markets and district_markets.get("found"):
+            market_scenarios = FinancialCalculator.calculate_market_scenarios(
+                predicted_yield_t_ha=predicted_yield,
+                cultivated_area_ha=area_float,
+                markets=district_markets.get("markets", []),
+                cul_cost_c2_per_ha=cost_info.get("cul_cost_c2_per_ha"),
+                crop_name=crop,
+                state_name=state,
+                cost_level=cost_info.get("cost_coverage", "unavailable"),
+            )
 
         return render_template(
             'index.html',
-            prediction=round(production, 2),
+            prediction=financials["total_production_tonnes"],
+            farm_production_tonnes=farm_production_tonnes,
             predicted_yield=round(predicted_yield, 2),
             selected_state=state,
             selected_district=district,
@@ -129,6 +139,7 @@ def predict():
             cost_info=cost_info,
             weather_info=weather_info,
             district_markets=district_markets,
+            market_scenarios=market_scenarios,
             yield_disclaimer=YIELD_DISCLAIMER
         )
 
@@ -190,6 +201,7 @@ def recommend():
         selected_year=selected_year,
         year_info=year_info,
         results=recommendation_results,
+        yield_disclaimer=YIELD_DISCLAIMER,
         error=error
     )
 
@@ -200,26 +212,32 @@ def weather():
     selected_state = request.form.get('state') if request.method == 'POST' else request.args.get('state')
     selected_district = request.form.get('district') if request.method == 'POST' else request.args.get('district')
     selected_season = request.form.get('season') if request.method == 'POST' else request.args.get('season', 'Kharif')
+    selected_crop = request.form.get('crop') if request.method == 'POST' else request.args.get('crop')
 
     weather_data = None
+    temp_data = None
     district_seasonal_history = []
     error = None
 
     if selected_district:
         try:
-            # Query seasonal rainfall table
-            if weather_intel.df_rainfall is not None:
-                dist_u = str(selected_district).strip().upper()
-                sub = weather_intel.df_rainfall[weather_intel.df_rainfall["District_Upper"] == dist_u]
-                if len(sub) > 0:
-                    district_seasonal_history = sub.to_dict(orient="records")
+            # Query seasonal rainfall table (state-disambiguated)
+            district_seasonal_history = weather_intel.get_district_seasonal_history(
+                state=selected_state,
+                district=selected_district,
+            )
 
-            # Assess general risk for selected season
+            eval_crop = selected_crop if selected_crop else ("Wheat" if "rabi" in selected_season.lower() else "Rice")
             weather_data = weather_intel.assess_weather_risk(
                 state=selected_state or "",
                 district=selected_district,
                 season=selected_season,
-                crop="Wheat" if "rabi" in selected_season.lower() else "Rice"
+                crop=eval_crop
+            )
+            temp_data = weather_intel.get_state_temperature_profile(
+                state=selected_state,
+                season=selected_season,
+                crop=eval_crop,
             )
         except Exception as e:
             error = f"Weather lookup failed: {e}"
@@ -229,7 +247,9 @@ def weather():
         selected_state=selected_state,
         selected_district=selected_district,
         selected_season=selected_season,
+        selected_crop=selected_crop,
         weather_data=weather_data,
+        temp_data=temp_data,
         seasonal_history=district_seasonal_history,
         water_requirements=weather_intel.crop_water_requirements,
         error=error

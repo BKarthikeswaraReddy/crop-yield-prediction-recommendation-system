@@ -31,9 +31,10 @@
                 CACP cultivation costs, and machine learning model benchmarks.
             </p>
 
+            {% set stats = metrics_data.get('dataset_stats', {}) if metrics_data else {} %}
             <div class="dataset-info">
                 <div>
-                    <strong>326,999</strong>
+                    <strong>{{ "{:,}".format(usable_records) if usable_records else "{:,}".format(metrics_data.get('total_records', 326672)) }}</strong>
                     <span>Production Records</span>
                 </div>
                 <div>
@@ -45,15 +46,15 @@
                     <span>IMD Rainfall Rows</span>
                 </div>
                 <div>
-                    <strong>2,808,042</strong>
-                    <span>Temperature Records</span>
+                    <strong>3,880</strong>
+                    <span>CACP Cost Surveys</span>
                 </div>
                 <div>
-                    <strong>36</strong>
+                    <strong>{{ stats.get('states', 36) }}</strong>
                     <span>States / UTs</span>
                 </div>
                 <div>
-                    <strong>728</strong>
+                    <strong>{{ stats.get('districts', 728) }}</strong>
                     <span>Districts</span>
                 </div>
             </div>
@@ -121,15 +122,15 @@
                     <h3 style="color: #0d47a1; font-size: 1.4rem; margin: 4px 0 10px 0;">Crop Yield Model</h3>
                     <div style="display: flex; gap: 15px; margin-bottom: 10px;">
                         <div>
-                            <div style="font-size: 1.6rem; font-weight: 800; color: #1565C0;">0.9024</div>
+                            <div style="font-size: 1.6rem; font-weight: 800; color: #1565C0;">0.8998</div>
                             <span style="font-size: 0.75rem; color: #555;">Test R² Score</span>
                         </div>
                         <div>
                             <div style="font-size: 1.6rem; font-weight: 800; color: #2e7d32;">XGBoost</div>
-                            <span style="font-size: 0.75rem; color: #555;">Best Algorithm</span>
+                            <span style="font-size: 0.75rem; color: #555;">Tweedie (p=1.5)</span>
                         </div>
                     </div>
-                    <p style="font-size: 0.85rem; color: #555;">Test MAE: 1.398 t/ha &bull; Test RMSE: 3.875 t/ha &bull; Trained on 261,337 chronological records.</p>
+                    <p style="font-size: 0.85rem; color: #555;">Test MAE: 1.289 t/ha &bull; Test RMSE: 3.966 t/ha &bull; Area-independent, 0 negative predictions (257,050 train / 69,636 test).</p>
                 </div>
             </div>
 

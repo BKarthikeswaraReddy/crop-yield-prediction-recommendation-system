@@ -1,6 +1,6 @@
 """
 Financial Calculator
-Crop Production Prediction and Farmer Decision Support System
+Machine Learning Based Crop Yield Prediction & Recommendation System
 
 Calculates complete farm economics:
   - Total production = predicted yield × cultivated area (tonnes)
@@ -16,7 +16,7 @@ Important Principles:
   - Transparently returns all component terms, units, and conversion factors.
 """
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 
 
 class FinancialCalculator:
@@ -114,4 +114,62 @@ class FinancialCalculator:
                 "local grading, transport charges, input variation, and intra-season price volatility."
             )
         }
+
+    @staticmethod
+    def calculate_market_scenarios(
+        predicted_yield_t_ha: float,
+        cultivated_area_ha: float,
+        markets: List[Dict[str, Any]],
+        cul_cost_c2_per_ha: Optional[float] = None,
+        crop_name: str = "",
+        state_name: str = "",
+        cost_level: str = "state_level",
+    ) -> List[Dict[str, Any]]:
+        """
+        Calculate revenue, cultivation cost, net profit, and ROI independently for
+        each individual APMC market record, preserving commodity, variety, grade,
+        market name, and historical arrival date.
+        """
+        scenarios: List[Dict[str, Any]] = []
+        for m in markets or []:
+            modal_price = m.get("modal_price")
+            fin = FinancialCalculator.calculate(
+                predicted_yield_t_ha=predicted_yield_t_ha,
+                cultivated_area_ha=cultivated_area_ha,
+                mandi_price_per_quintal=modal_price,
+                cul_cost_c2_per_ha=cul_cost_c2_per_ha,
+                crop_name=crop_name,
+                state_name=state_name,
+                price_level="market_apmc",
+                cost_level=cost_level,
+            )
+            scenarios.append({
+                "market": m.get("market", "Unknown"),
+                "commodity": m.get("commodity", crop_name),
+                "variety": m.get("variety", "—"),
+                "grade": m.get("grade", "—"),
+                "min_price": m.get("min_price"),
+                "max_price": m.get("max_price"),
+                "modal_price": fin["mandi_price_per_quintal"],
+                "arrival_date": m.get("arrival_date", "—"),
+                "source_year": m.get("source_year"),
+                "total_production_tonnes": fin["total_production_tonnes"],
+                "total_production_quintals": fin["total_production_quintals"],
+                "gross_revenue": fin["gross_revenue"],
+                "total_cultivation_cost": fin["total_cultivation_cost"],
+                "estimated_profit": fin["estimated_profit"],
+                "roi_percent": fin["roi_percent"],
+                "financial_status": fin["financial_status"],
+            })
+
+        # Sort by profit descending (when available), then revenue descending
+        scenarios.sort(
+            key=lambda s: (
+                s["estimated_profit"] is not None,
+                s["estimated_profit"] if s["estimated_profit"] is not None else -float("inf"),
+                s["gross_revenue"] if s["gross_revenue"] is not None else -float("inf"),
+            ),
+            reverse=True,
+        )
+        return scenarios
 
